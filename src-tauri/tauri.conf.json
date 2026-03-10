@@ -1,0 +1,30 @@
+{
+  "productName": "PREVU",
+  "version": "0.1.0",
+  "identifier": "dev.prevu.app",
+  "build": {
+    "beforeDevCommand": "npm --prefix frontend run dev",
+    "beforeBuildCommand": "npm --prefix frontend run build",
+    "devUrl": "http://localhost:5173",
+    "frontendDist": "../frontend/dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "PREVU",
+        "width": 1200,
+        "height": 860,
+        "resizable": true,
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["app", "dmg", "nsis", "msi", "appimage", "deb"],
+    "category": "DeveloperTool"
+  }
+}

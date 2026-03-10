@@ -1,0 +1,29 @@
+[package]
+name = "prevu"
+version = "0.1.0"
+description = "Instant social preview inspector for developers"
+edition = "2021"
+
+[lib]
+name = "prevu_core"
+path = "src/lib.rs"
+
+[[bin]]
+name = "prevu-desktop"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json", "gzip", "brotli", "deflate"] }
+scraper = "0.20"
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "gif", "webp"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "time"] }
+url = "2"
+arboard = "3"
+thiserror = "1"
+rfd = "0.15"

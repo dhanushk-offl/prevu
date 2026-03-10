@@ -1,0 +1,73 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #eef1f5;
+  --ink-1: #0f172a;
+  --ink-2: #334155;
+  --ink-3: #64748b;
+  --line: #d9e1ea;
+  --surface: #ffffff;
+  --surface-soft: #f8fafc;
+  --accent: #2563eb;
+  --accent-ink: #1e40af;
+  color: var(--ink-1);
+  font-family: "SF Pro Display", "Segoe UI", "Inter", sans-serif;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background:
+    radial-gradient(1200px 700px at -10% -10%, #dbeafe 0%, transparent 65%),
+    radial-gradient(900px 600px at 110% -20%, #e2e8f0 0%, transparent 70%),
+    linear-gradient(180deg, #f8fafc 0%, var(--bg) 100%);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+@layer components {
+  .app-frame {
+    @apply mx-auto w-full max-w-[1500px] rounded-[28px] border border-slate-200/80 bg-white/70 shadow-[0_28px_80px_rgba(15,23,42,0.16)] backdrop-blur-xl;
+  }
+
+  .desktop-bar {
+    @apply flex items-center justify-between border-b border-slate-200/90 bg-gradient-to-b from-white/90 to-slate-50/80 px-5 py-3;
+  }
+
+  .panel {
+    @apply rounded-2xl border border-slate-200/90 bg-white/95 shadow-[0_8px_30px_rgba(15,23,42,0.07)];
+  }
+
+  .panel-head {
+    @apply mb-4 flex items-center justify-between gap-2;
+  }
+
+  .panel-title {
+    @apply text-sm font-semibold tracking-wide text-slate-900;
+  }
+
+  .panel-subtitle {
+    @apply text-xs text-slate-500;
+  }
+
+  .btn-primary {
+    @apply rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .btn-ghost {
+    @apply rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50;
+  }
+
+  .input-shell {
+    @apply rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-400;
+  }
+}
