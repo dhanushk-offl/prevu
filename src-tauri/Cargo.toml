@@ -1,6 +1,6 @@
 [package]
 name = "prevu"
-version = "0.1.1"
+version = "0.1.2"
 description = "Instant social preview inspector for developers"
 edition = "2021"
 
