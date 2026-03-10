@@ -17,7 +17,26 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
+        include:
+          - os: windows-latest
+            bundles: "nsis,msi"
+            artifact_name: prevu-windows-bundles
+            artifact_paths: |
+              target/release/bundle/**/*.msi
+              target/release/bundle/**/*.exe
+          - os: macos-latest
+            bundles: "app,dmg"
+            artifact_name: prevu-macos-bundles
+            artifact_paths: |
+              target/release/bundle/**/*.dmg
+              target/release/bundle/macos/**/*.app
+              target/release/bundle/macos/**/*.app/**
+          - os: ubuntu-latest
+            bundles: "appimage,deb"
+            artifact_name: prevu-linux-bundles
+            artifact_paths: |
+              target/release/bundle/**/*.AppImage
+              target/release/bundle/**/*.deb
 
     steps:
       - name: Checkout repository
@@ -66,36 +85,31 @@ jobs:
       - name: Install frontend npm dependencies
         run: npm --prefix frontend ci
 
+      - name: Verify icon files
+        shell: pwsh
+        run: |
+          Get-ChildItem src-tauri/icons | Format-Table -AutoSize
+          if (!(Test-Path "src-tauri/icons/icon.ico")) { throw "Missing src-tauri/icons/icon.ico" }
+          if (!(Test-Path "src-tauri/icons/icon.png")) { throw "Missing src-tauri/icons/icon.png" }
+          if (!(Test-Path "src-tauri/icons/icon.icns")) { throw "Missing src-tauri/icons/icon.icns" }
+
       # Uses local script alias: "tauri": "tauri"
       - name: Build Tauri app
-        run: npm run tauri -- build
+        run: npm run tauri -- build --bundles ${{ matrix.bundles }}
 
-      - name: Upload Windows installers
-        if: matrix.os == 'windows-latest'
+      - name: Show bundle outputs
+        if: always()
+        shell: pwsh
+        run: |
+          if (Test-Path "target/release/bundle") {
+            Get-ChildItem -Recurse -File target/release/bundle | Select-Object -ExpandProperty FullName
+          } else {
+            Write-Host "No bundle directory found"
+          }
+
+      - name: Upload installers
         uses: actions/upload-artifact@v4
         with:
-          name: prevu-windows-bundles
+          name: ${{ matrix.artifact_name }}
           if-no-files-found: error
-          path: |
-            src-tauri/target/release/bundle/**/*.msi
-            src-tauri/target/release/bundle/**/*.exe
-
-      - name: Upload macOS installers
-        if: matrix.os == 'macos-latest'
-        uses: actions/upload-artifact@v4
-        with:
-          name: prevu-macos-bundles
-          if-no-files-found: error
-          path: |
-            src-tauri/target/release/bundle/**/*.dmg
-            src-tauri/target/release/bundle/**/*.app
-
-      - name: Upload Linux installers
-        if: matrix.os == 'ubuntu-latest'
-        uses: actions/upload-artifact@v4
-        with:
-          name: prevu-linux-bundles
-          if-no-files-found: error
-          path: |
-            src-tauri/target/release/bundle/**/*.AppImage
-            src-tauri/target/release/bundle/**/*.deb
+          path: ${{ matrix.artifact_paths }}
