@@ -67,7 +67,12 @@ jobs:
             patchelf \
             libwebkit2gtk-4.1-dev \
             libgtk-3-dev \
-            libsoup-3.0-dev
+            libsoup-3.0-dev \
+            imagemagick
+
+      - name: Install macOS system dependencies
+        if: matrix.os == 'macos-latest'
+        run: brew install imagemagick
 
       - name: Setup Rust stable toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -85,13 +90,23 @@ jobs:
       - name: Install frontend npm dependencies
         run: npm --prefix frontend ci
 
+      # ---------------------------------------------------------------
+      # FIX 1: Generate all required Tauri icon sizes from logo.png.
+      # This produces: 32x32.png, 128x128.png, 128x128@2x.png,
+      # icon.ico (Windows), icon.icns (macOS), and Square*Logo.png files
+      # that the AppImage / NSIS / DMG bundlers all require.
+      # ---------------------------------------------------------------
+      - name: Generate Tauri icons from logo.png
+        run: npm run tauri -- icon logo.png
+
       - name: Verify icon files
         shell: pwsh
         run: |
           Get-ChildItem src-tauri/icons | Format-Table -AutoSize
-          if (!(Test-Path "src-tauri/icons/icon.ico")) { throw "Missing src-tauri/icons/icon.ico" }
-          if (!(Test-Path "src-tauri/icons/icon.png")) { throw "Missing src-tauri/icons/icon.png" }
-          if (!(Test-Path "src-tauri/icons/icon.icns")) { throw "Missing src-tauri/icons/icon.icns" }
+          if (!(Test-Path "src-tauri/icons/icon.ico"))   { throw "Missing src-tauri/icons/icon.ico" }
+          if (!(Test-Path "src-tauri/icons/icon.icns"))  { throw "Missing src-tauri/icons/icon.icns" }
+          if (!(Test-Path "src-tauri/icons/128x128.png")) { throw "Missing src-tauri/icons/128x128.png" }
+          if (!(Test-Path "src-tauri/icons/32x32.png"))   { throw "Missing src-tauri/icons/32x32.png" }
 
       # Uses local script alias: "tauri": "tauri"
       - name: Build Tauri app
