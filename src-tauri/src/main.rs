@@ -86,6 +86,10 @@ fn open_external_url(url: String) -> Result<(), String> {
 }
 
 fn main() {
+    // Disable hardware acceleration to fix EGL issues on some Linux systems
+    std::env::set_var("WEBKIT_DISABLE_COMPOSITING_MODE", "1");
+    std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
+
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             inspect_url,

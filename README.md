@@ -81,23 +81,30 @@ Get the latest installer from the [**Releases page**](https://github.com/dhanush
 ### macOS
 
 1. Download `PREVU_x.x.x_x64.dmg` (Intel) or `PREVU_x.x.x_aarch64.dmg` (Apple Silicon) from the [Releases page](https://github.com/dhanushk-offl/prevu/releases)
-2. Open the `.dmg` file and drag **PREVU** into your **Applications** folder
-3. On first launch, macOS **Gatekeeper** will block the app with _"cannot be opened because the developer cannot be verified"_
+2. Open **Finder** and navigate to your **Downloads** folder
+3. Double-click the downloaded `.dmg` file to mount it (you'll see a new PREVU volume appear on your Desktop)
+4. Drag the **PREVU** app icon into your **Applications** folder
+5. Eject the PREVU volume by clicking the eject button next to it in Finder
+6. Open **Launchpad** or **Applications** folder and double-click **PREVU** to launch
 
-**To allow it — Option A (recommended):**
+**If macOS blocks the app with "damaged" or "cannot be opened":**
 
+**Option A (GUI - recommended):**
 1. Open **System Settings** → **Privacy & Security**
-2. Scroll down to the Security section
-3. You will see _"PREVU was blocked"_ — click **Open Anyway**
-4. Confirm by clicking **Open** in the dialog that appears
+2. Scroll down to find _"PREVU was blocked from use because it is not from an identified developer"_
+3. Click **Open Anyway**
+4. In the confirmation dialog, click **Open**
 
-**To allow it — Option B (Terminal):**
+**Option B (Terminal):**
+1. Open **Terminal** app (search for it in Spotlight or find it in Applications → Utilities)
+2. Run this command to remove the quarantine flag:
+   ```bash
+   xattr -cr /Applications/PREVU.app
+   ```
+3. Launch PREVU normally
 
-```bash
-xattr -cr /Applications/PREVU.app
-```
-
-Then launch normally. This removes the quarantine flag macOS sets on downloaded apps.
+> **Why does this happen?**  
+> PREVU builds are not code-signed with an Apple Developer ID yet. macOS Gatekeeper blocks unsigned apps by default for security. The app is safe — you can verify the source on this repository.
 
 > **Why does Gatekeeper appear?**  
 > macOS requires apps to be notarized by Apple or signed with a Developer ID certificate. PREVU is not notarized yet. The `xattr -cr` command is the standard developer workaround for this.

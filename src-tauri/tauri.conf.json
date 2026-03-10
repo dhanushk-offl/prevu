@@ -9,6 +9,10 @@
     "frontendDist": "../frontend/dist"
   },
   "app": {
+    "env": {
+      "WEBKIT_DISABLE_COMPOSITING_MODE": "1",
+      "WEBKIT_DISABLE_DMABUF_RENDERER": "1"
+    },
     "windows": [
       {
         "title": "PREVU",
