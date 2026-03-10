@@ -344,6 +344,14 @@ export default function Home() {
     }
   };
 
+  const openDhanuLink = async () => {
+    try {
+      await invoke("open_external_url", { url: "https://akadhanu.pages.dev" });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  };
+
   useEffect(() => {
     writeStorage(SETTINGS_KEY, settings);
   }, [settings]);
@@ -545,7 +553,10 @@ export default function Home() {
         </div>
 
         <footer className="border-t border-slate-200 bg-[#f8fafd] px-4 py-2 text-center text-xs text-slate-600">
-          Build with love {"\u2764\uFE0F"} by <a className="text-slate-700 underline" href="https://akadhanu.pages.dev" target="_blank" rel="noreferrer">Dhanu </a>
+          Build with love {"\u2764\uFE0F"} by{" "}
+          <button type="button" className="text-slate-700 underline" onClick={openDhanuLink}>
+            Dhanu
+          </button>
         </footer>
       </div>
 

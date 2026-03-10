@@ -1,6 +1,6 @@
 [package]
 name = "prevu"
-version = "0.1.0"
+version = "0.1.1"
 description = "Instant social preview inspector for developers"
 edition = "2021"
 
@@ -27,3 +27,4 @@ url = "2"
 arboard = "3"
 thiserror = "1"
 rfd = "0.15"
+open = "5"

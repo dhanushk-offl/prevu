@@ -6,6 +6,9 @@
   "scripts": {
     "dev": "npm --prefix frontend run dev",
     "build": "npm --prefix frontend run build",
+    "website:dev": "npm --prefix website run dev",
+    "website:build": "npm --prefix website run build",
+    "website:preview": "npm --prefix website run preview",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",

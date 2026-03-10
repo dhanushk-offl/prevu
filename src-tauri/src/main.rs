@@ -79,6 +79,12 @@ fn save_binary_dialog(default_name: String, bytes: Vec<u8>) -> Result<Option<Str
     Ok(Some(path.display().to_string()))
 }
 
+#[tauri::command]
+fn open_external_url(url: String) -> Result<(), String> {
+    open::that(url).map_err(|err| format!("failed to open url: {err}"))?;
+    Ok(())
+}
+
 fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
@@ -89,7 +95,8 @@ fn main() {
             read_clipboard_url,
             save_workspace_dialog,
             open_workspace_dialog,
-            save_binary_dialog
+            save_binary_dialog,
+            open_external_url
         ])
         .run(tauri::generate_context!())
         .expect("error while running PREVU desktop app");
