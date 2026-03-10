@@ -1,219 +1,303 @@
-# PREVU
+<p align="center">
+  <img src="logo.png" alt="PREVU" width="100" />
+</p>
 
-Instant social preview inspector for developers.
+<h2 align="center">PREVU</h2>
 
-PREVU is a lightweight cross-platform desktop app for inspecting Open Graph and Twitter metadata from localhost, staging, and production URLs. It parses metadata, validates critical tags, inspects OG image quality, and renders realistic previews for common social platforms.
+<p align="center">
+  The Postman for OG Images — inspect, validate, and preview your site's social metadata without a public URL.
+</p>
 
-## Features
+<p align="center">
+  <a href="https://github.com/dhanushk-offl/prevu/actions/workflows/build.yml">
+    <img src="https://github.com/dhanushk-offl/prevu/actions/workflows/build.yml/badge.svg" alt="Build" />
+  </a>
+  <a href="https://github.com/dhanushk-offl/prevu/releases">
+    <img src="https://img.shields.io/github/v/release/dhanushk-offl/prevu?include_prereleases&label=release&color=blue" alt="Release" />
+  </a>
+  <a href="https://github.com/dhanushk-offl/prevu/blob/master/LICENSE">
+    <img src="https://img.shields.io/github/license/dhanushk-offl/prevu?color=blue" alt="License" />
+  </a>
+  <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-blue" alt="Platforms" />
+  <img src="https://img.shields.io/badge/built%20with-Tauri%20%2B%20React-orange" alt="Stack" />
+</p>
 
-- URL inspection for `localhost`, staging, and production targets
-- Open Graph and Twitter meta extraction
-- Validation checks for required tags and image constraints
-- Social preview simulator for Twitter, LinkedIn, Discord, WhatsApp, and Facebook
-- OG image inspector (resolution, file size, ratio)
-- Metadata table viewer
-- Clipboard auto-preview toggle
-- Watch mode (auto re-inspect every 5 seconds)
-- Reusable CLI (`prevu inspect <url>`) sharing parser and validator logic
-- Lightweight Tauri + React architecture designed for small binaries
+---
+
+> [!WARNING]
+> This is very much in beta and might be buggy here and there (but hope you have a good experience!).
+
+> Most OG image issues are discovered only after deploying. PREVU brings that feedback loop to your local machine — paste any URL and instantly see how it renders across every major social platform, complete with validation, before you ever push.
+
+---
 
 ## Screenshots
 
-- Desktop home: `docs/screenshots/home.png` (placeholder)
-- Preview tab: `docs/screenshots/preview.png` (placeholder)
-- Validation tab: `docs/screenshots/validation.png` (placeholder)
+| Home | Preview | Validation |
+|------|---------|------------|
+| ![Home](https://res.cloudinary.com/dwir71gi2/image/upload/v1773144422/main-page-prevu_qwnymz.png) | ![Preview](https://res.cloudinary.com/dwir71gi2/image/upload/v1773144421/preview-page-prevu_mfnmcc.png) | ![Validation](https://res.cloudinary.com/dwir71gi2/image/upload/v1773144422/cover-compare-prevu_itrzhj.png) |
+
+---
+
+## Download
+
+Get the latest installer from the [**Releases page**](https://github.com/dhanushk-offl/prevu/releases).
+
+| Platform | Installer |
+|----------|-----------|
+| Windows | `.exe` (NSIS) · `.msi` |
+| macOS | `.dmg` |
+| Linux | `.AppImage` · `.deb` |
+
+> Builds are currently unsigned. On macOS: System Settings → Privacy & Security → Open Anyway. On Windows: SmartScreen → More Info → Run Anyway.
+
+---
+
+## Installation
+
+### Windows
+
+**Using the NSIS installer (`.exe`) — recommended**
+
+1. Download `PREVU_x.x.x_x64-setup.exe` from the [Releases page](https://github.com/dhanushk-offl/prevu/releases)
+2. Double-click the installer
+3. If **Windows SmartScreen** blocks the app:
+   - Click **More info**
+   - Click **Run anyway**
+4. Follow the installer steps and launch PREVU from the Start Menu
+
+**Using the MSI installer (`.msi`)**
+
+1. Download `PREVU_x.x.x_x64_en-US.msi` from the [Releases page](https://github.com/dhanushk-offl/prevu/releases)
+2. Double-click the `.msi` file
+3. If prompted by SmartScreen, click **More info → Run anyway**
+4. Follow the installation wizard
+
+> **Why does SmartScreen appear?**  
+> PREVU builds are not Authenticode-signed yet. SmartScreen flags unsigned executables by default. The app is safe — you can verify the source on this repository.
+
+---
+
+### macOS
+
+1. Download `PREVU_x.x.x_x64.dmg` (Intel) or `PREVU_x.x.x_aarch64.dmg` (Apple Silicon) from the [Releases page](https://github.com/dhanushk-offl/prevu/releases)
+2. Open the `.dmg` file and drag **PREVU** into your **Applications** folder
+3. On first launch, macOS **Gatekeeper** will block the app with _"cannot be opened because the developer cannot be verified"_
+
+**To allow it — Option A (recommended):**
+
+1. Open **System Settings** → **Privacy & Security**
+2. Scroll down to the Security section
+3. You will see _"PREVU was blocked"_ — click **Open Anyway**
+4. Confirm by clicking **Open** in the dialog that appears
+
+**To allow it — Option B (Terminal):**
+
+```bash
+xattr -cr /Applications/PREVU.app
+```
+
+Then launch normally. This removes the quarantine flag macOS sets on downloaded apps.
+
+> **Why does Gatekeeper appear?**  
+> macOS requires apps to be notarized by Apple or signed with a Developer ID certificate. PREVU is not notarized yet. The `xattr -cr` command is the standard developer workaround for this.
+
+---
+
+### Linux
+
+**AppImage (universal — recommended)**
+
+1. Download `PREVU_x.x.x_amd64.AppImage` from the [Releases page](https://github.com/dhanushk-offl/prevu/releases)
+2. Make it executable and run:
+
+```bash
+chmod +x PREVU_x.x.x_amd64.AppImage
+./PREVU_x.x.x_amd64.AppImage
+```
+
+Optionally move it to a permanent location:
+
+```bash
+mv PREVU_x.x.x_amd64.AppImage ~/.local/bin/prevu
+chmod +x ~/.local/bin/prevu
+```
+
+Make sure `~/.local/bin` is in your `PATH`:
+
+```bash
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+```
+
+**Debian / Ubuntu (`.deb`)**
+
+```bash
+sudo dpkg -i PREVU_x.x.x_amd64.deb
+```
+
+If there are missing dependencies:
+
+```bash
+sudo apt-get install -f
+```
+
+Launch from your app menu or run:
+
+```bash
+prevu
+```
+
+**Removing PREVU on Linux**
+
+```bash
+# AppImage — just delete the file
+rm ~/.local/bin/prevu
+
+# .deb install
+sudo dpkg -r prevu
+```
+
+> **Note:** PREVU requires a WebKitGTK runtime on Linux. If the app fails to launch, install it:
+> ```bash
+> # Ubuntu / Debian
+> sudo apt-get install libwebkit2gtk-4.1-0
+>
+> # Fedora
+> sudo dnf install webkit2gtk4.1
+>
+> # Arch
+> sudo pacman -S webkit2gtk-4.1
+> ```
+
+---
+
+## Features
+
+- Inspect any URL — `localhost`, staging, or production
+- Extract and display all Open Graph and Twitter Card tags
+- Validate required tags, image dimensions, aspect ratio, and file size
+- Render realistic social previews for Twitter, LinkedIn, Discord, WhatsApp, and Facebook
+- Clipboard auto-preview — automatically inspects URLs you copy
+- Watch mode — re-inspects every 5 seconds during active development
+- Reusable CLI: `prevu inspect <url>` shares the same core logic as the desktop app
+- Lightweight Tauri binary with minimal memory footprint
+
+---
 
 ## Tech Stack
 
-- Desktop: Tauri (Rust)
-- Frontend: React + Vite + TypeScript + TailwindCSS
-- Rust crates: `reqwest`, `scraper`, `image`, `serde`, `serde_json`, `tokio`, `arboard`
+| Layer | Technology |
+|-------|-----------|
+| Desktop shell | Tauri (Rust) |
+| Frontend | React + Vite + TypeScript + TailwindCSS |
+| HTML parsing | `reqwest` + `scraper` |
+| Image analysis | `image` crate |
+| Clipboard | `arboard` |
+| Serialization | `serde` + `serde_json` |
+| Async runtime | `tokio` |
+
+---
 
 ## Project Structure
 
-```text
+```
 prevu/
-  frontend/
-    src/
-      components/
-      pages/
-      styles/
-  src-tauri/
-    src/
-      main.rs
-      parser.rs
-      validator.rs
-      image_checker.rs
-      clipboard_watcher.rs
-  cli/
-    prevu-cli.rs
+├── frontend/               # React + Vite frontend
+│   └── src/
+│       ├── components/     # PreviewCard, MetaTable, etc.
+│       └── pages/
+├── src-tauri/              # Tauri Rust backend
+│   └── src/
+│       ├── main.rs
+│       ├── parser.rs
+│       ├── validator.rs
+│       ├── image_checker.rs
+│       └── clipboard_watcher.rs
+└── cli/                    # Standalone CLI
+    └── prevu-cli.rs
 ```
 
-## Installation
+---
+
+## Development
 
 ### Prerequisites
 
 - Node.js 20+
 - Rust stable
-- OS dependencies for Tauri (WebView2 on Windows, WebKitGTK on Linux)
+- Platform Tauri deps: WebView2 (Windows), WebKitGTK (Linux)
 
-### Install dependencies
+### Setup
 
 ```bash
 npm install
 npm --prefix frontend install
 ```
 
-## Development
-
-Run desktop app in development mode:
+### Run
 
 ```bash
-npm run tauri:dev
+npm run tauri:dev     # Full desktop app with hot reload
+npm run dev           # Frontend only (browser)
 ```
 
-Run frontend only:
-
-```bash
-npm run dev
-```
-
-Run CLI:
-
-```bash
-npm run cli -- inspect http://localhost:3000
-```
-
-## Build
-
-Build desktop bundles:
+### Build
 
 ```bash
 npm run tauri:build
 ```
 
-Tauri is configured to build:
+---
 
-- macOS `.dmg`
-- Windows installer (`.exe` via NSIS)
-- Linux `.AppImage`
-
-## CLI Usage
+## CLI
 
 ```bash
 cargo run --manifest-path cli/Cargo.toml -- inspect https://example.com
 cargo run --manifest-path cli/Cargo.toml -- inspect https://example.com --json
 ```
 
-Example output:
-
-```text
-[OK] og:title detected
-[OK] og:description detected
+```
+[OK]   og:title detected
+[OK]   og:description detected
 [WARN] Missing twitter:card
 [WARN] Image resolution too small (500x260). Minimum is 600x315
 ```
 
-## How It Works
+---
 
-### Parser
+## Contributing
 
-`src-tauri/src/parser.rs` fetches HTML with `reqwest`, parses `<meta>` tags with `scraper`, normalizes relative URLs, and returns structured metadata.
+Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) before opening a pull request.
 
-### Validation
+**Adding a new platform preview:**
 
-`src-tauri/src/validator.rs` checks:
+1. Update the platform union type in `PreviewCard.tsx`
+2. Add the style mapping for the new platform
+3. Render the card in the preview tab in `Home.tsx`
 
-- Required OG tags: `og:title`, `og:description`, `og:image`
-- Presence of `twitter:card`
-- Image resolution (min and recommended)
-- Image aspect ratio (target ~1.91:1)
-- Image file size threshold (5MB)
+---
 
-### Preview Rendering
+## Star History
 
-`frontend/src/components/PreviewCard.tsx` renders card variants per platform using the same parsed metadata with platform-specific visual styles.
+<p align="center">
+  <a href="https://star-history.com/#dhanushk-offl/prevu&Date">
+    <img src="https://api.star-history.com/svg?repos=dhanushk-offl/prevu&type=Date" alt="Star History Chart" width="600" />
+  </a>
+</p>
 
-### Adding New Platform Preview
+---
 
-1. Update platform union in `PreviewCard.tsx`.
-2. Add style mapping for the platform.
-3. Render the new card in `Home.tsx` preview tab.
+## Support the Project
 
-## Open Source
+If PREVU saved you from shipping a broken link preview, consider buying me a coffee.
 
-- License: MIT
-- Contributions: see `CONTRIBUTING.md`
-- Code of Conduct: see `CODE_OF_CONDUCT.md`
+<a href="https://buymeacoffee.com/itzmedhanu" target="_blank">
+  <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" width="160" />
+</a>
 
-## Notes
+---
 
-- Clipboard access may depend on OS-level permissions.
-- Localhost inspection requires PREVU to reach your local dev server.
+## License
 
-## CI/CD (GitHub Actions)
-
-PREVU includes a cross-platform build pipeline at:
-
-`/.github/workflows/build.yml`
-
-### How It Works
-
-- Triggers on:
-  - push to `main`
-  - manual run via `workflow_dispatch`
-- Uses a matrix to build in parallel on:
-  - `windows-latest`
-  - `macos-latest`
-  - `ubuntu-latest`
-- Per job it:
-  - checks out code
-  - sets up Node.js 20
-  - installs Rust stable
-  - caches npm and Rust dependencies
-  - runs `npm install`
-  - runs `npm run tauri -- build`
-  - uploads installer artifacts from `src-tauri/target/release/bundle/`
-
-### Build Artifacts
-
-- Windows:
-  - `.msi`
-  - `.exe`
-- macOS:
-  - `.dmg`
-  - `.app`
-- Linux:
-  - `.AppImage`
-  - `.deb`
-
-### How To Trigger Builds
-
-1. Automatic: push a commit to `main`.
-2. Manual:
-   - Open GitHub repository
-   - Go to `Actions` tab
-   - Select `Build Desktop Installers`
-   - Click `Run workflow`
-
-### Where To Download Artifacts
-
-1. Open the completed workflow run in `Actions`.
-2. In the `Artifacts` section, download:
-   - `prevu-windows-bundles`
-   - `prevu-macos-bundles`
-   - `prevu-linux-bundles`
-
-### Publishing Releases Later
-
-Recommended release flow:
-
-1. Create and push a Git tag (for example `v0.2.0`).
-2. Add a release workflow that triggers on `push.tags`.
-3. Reuse this build process, then attach generated bundles to a GitHub Release.
-4. Add code-signing/notarization:
-   - Windows: Authenticode signing for `.exe`/`.msi`
-   - macOS: Developer ID signing + notarization for `.app`/`.dmg`
-   - Linux: optional signing/checksums for release assets
-
-If you want, I can generate a second workflow (`release.yml`) that publishes artifacts directly to GitHub Releases.
+MIT © [dhanushk-offl](https://github.com/dhanushk-offl)

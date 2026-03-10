@@ -1,3 +1,5 @@
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
 use prevu_core::{
     batch_inspect_urls as batch_inspect_urls_core, clipboard_watcher,
     compare_environments as compare_environments_core, inspect_url as inspect_url_core,
