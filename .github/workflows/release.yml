@@ -190,12 +190,25 @@ jobs:
     name: Update AUR package
     needs: release
     runs-on: ubuntu-latest
-    if: ${{ secrets.AUR_SSH_PRIVATE_KEY != '' }}
     steps:
+      - name: Check AUR secret presence
+        id: aur_secret
+        env:
+          AUR_SSH_PRIVATE_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+        run: |
+          if [ -z "${AUR_SSH_PRIVATE_KEY}" ]; then
+            echo "AUR_SSH_PRIVATE_KEY is not set. Skipping AUR update."
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Install dependencies
+        if: steps.aur_secret.outputs.present == 'true'
         run: sudo apt-get update && sudo apt-get install -y git openssh-client docker.io
 
       - name: Setup SSH for AUR
+        if: steps.aur_secret.outputs.present == 'true'
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.AUR_SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
@@ -203,9 +216,11 @@ jobs:
           ssh-keyscan aur.archlinux.org >> ~/.ssh/known_hosts
 
       - name: Clone AUR repo
+        if: steps.aur_secret.outputs.present == 'true'
         run: git clone ssh://aur@aur.archlinux.org/prevu.git aur
 
       - name: Update PKGBUILD and .SRCINFO
+        if: steps.aur_secret.outputs.present == 'true'
         env:
           VERSION: ${{ github.ref_name }}
         run: |
@@ -223,6 +238,7 @@ jobs:
           "
 
       - name: Commit and push update
+        if: steps.aur_secret.outputs.present == 'true'
         env:
           VERSION: ${{ github.ref_name }}
         run: |
