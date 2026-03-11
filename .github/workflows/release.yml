@@ -180,8 +180,57 @@ jobs:
             |----------|------|
             | 🪟 Windows | `.exe` (NSIS installer) or `.msi` |
             | 🍎 macOS (Apple Silicon) | `.dmg` |
-            | 🐧 Linux | `.AppImage` or `.deb` |
+            | 🐧 Linux | `.AppImage` or `.deb` (Arch AUR: `yay -S prevu`) |
 
             > **Note:** macOS and Windows builds are not code-signed.
             > You may need to allow the app through Gatekeeper (macOS) or SmartScreen (Windows).
           files: release-files/*
+
+  update-aur:
+    name: Update AUR package
+    needs: release
+    runs-on: ubuntu-latest
+    if: ${{ secrets.AUR_SSH_PRIVATE_KEY != '' }}
+    steps:
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y git openssh-client docker.io
+
+      - name: Setup SSH for AUR
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.AUR_SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan aur.archlinux.org >> ~/.ssh/known_hosts
+
+      - name: Clone AUR repo
+        run: git clone ssh://aur@aur.archlinux.org/prevu.git aur
+
+      - name: Update PKGBUILD and .SRCINFO
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          VERSION="${VERSION#v}"
+          cd aur
+          sed -i "s/^pkgver=.*/pkgver=${VERSION}/" PKGBUILD
+          sed -i "s/^pkgrel=.*/pkgrel=1/" PKGBUILD
+          docker run --rm -v "$PWD:/work" archlinux:latest bash -lc "
+            set -euo pipefail
+            pacman -Sy --noconfirm base-devel pacman-contrib >/dev/null
+            cd /work
+            updpkgsums
+            makepkg --printsrcinfo > .SRCINFO
+          "
+
+      - name: Commit and push update
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          VERSION="${VERSION#v}"
+          cd aur
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add PKGBUILD .SRCINFO
+          git commit -m "update to ${VERSION}" || echo "No changes"
+          git push

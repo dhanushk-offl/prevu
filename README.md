@@ -47,7 +47,7 @@ Get the latest installer from the [**Releases page**](https://github.com/dhanush
 |----------|-----------|
 | Windows | `.exe` (NSIS) · `.msi` |
 | macOS | `.dmg` |
-| Linux | `.AppImage` · `.deb` |
+| Linux | `.AppImage` · `.deb` · Arch AUR (`yay -S prevu`) |
 
 > Builds are currently unsigned. On macOS: System Settings → Privacy & Security → Open Anyway. On Windows: SmartScreen → More Info → Run Anyway.
 
@@ -112,6 +112,12 @@ Get the latest installer from the [**Releases page**](https://github.com/dhanush
 ---
 
 ### Linux
+
+**Arch Linux (AUR)**
+
+```bash
+yay -S prevu
+```
 
 **AppImage (universal — recommended)**
 
