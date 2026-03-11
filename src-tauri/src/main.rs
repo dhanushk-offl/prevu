@@ -9,6 +9,42 @@ use prevu_core::{
 use rfd::FileDialog;
 use std::fs;
 
+#[cfg(target_os = "linux")]
+fn set_env_if_unset(key: &str, value: &str) {
+    if std::env::var_os(key).is_none() {
+        std::env::set_var(key, value);
+    }
+}
+
+#[cfg(target_os = "linux")]
+fn configure_linux_graphics_fallbacks() {
+    let allow_hardware = std::env::var("PREVU_ALLOW_HARDWARE_ACCELERATION")
+        .map(|value| matches!(value.as_str(), "1" | "true" | "TRUE" | "yes" | "on"))
+        .unwrap_or(false);
+
+    if allow_hardware {
+        return;
+    }
+
+    // Keep WebKitGTK on a software-safe path for problematic EGL/Wayland stacks.
+    set_env_if_unset("WEBKIT_DISABLE_COMPOSITING_MODE", "1");
+    set_env_if_unset("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
+    set_env_if_unset("LIBGL_ALWAYS_SOFTWARE", "1");
+    set_env_if_unset("LIBGL_DRI3_DISABLE", "1");
+
+    let has_wayland = std::env::var_os("WAYLAND_DISPLAY").is_some();
+    let has_x11 = std::env::var_os("DISPLAY").is_some();
+    let has_gdk_backend = std::env::var_os("GDK_BACKEND").is_some();
+
+    // Prefer X11 when both are available to avoid Wayland/EGL init crashes.
+    if has_wayland && has_x11 && !has_gdk_backend {
+        std::env::set_var("GDK_BACKEND", "x11");
+    }
+}
+
+#[cfg(not(target_os = "linux"))]
+fn configure_linux_graphics_fallbacks() {}
+
 #[tauri::command]
 async fn inspect_url(url: String) -> Result<InspectResult, String> {
     inspect_url_core(&url).await.map_err(|err| err.to_string())
@@ -86,9 +122,7 @@ fn open_external_url(url: String) -> Result<(), String> {
 }
 
 fn main() {
-    // Disable hardware acceleration to fix EGL issues on some Linux systems
-    std::env::set_var("WEBKIT_DISABLE_COMPOSITING_MODE", "1");
-    std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
+    configure_linux_graphics_fallbacks();
 
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![

@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   build:
-    name: Build (${{ matrix.os }})
+    name: Build (${{ matrix.os }} ${{ matrix.arch || '' }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
     strategy:
@@ -23,9 +23,18 @@ jobs:
             artifact_paths: |
               target/release/bundle/**/*.msi
               target/release/bundle/**/*.exe
-          - os: macos-latest
+          - os: macos-13
+            arch: x64
             bundles: "app,dmg"
-            artifact_name: prevu-macos-bundles
+            artifact_name: prevu-macos-x64-bundles
+            artifact_paths: |
+              target/release/bundle/**/*.dmg
+              target/release/bundle/macos/**/*.app
+              target/release/bundle/macos/**/*.app/**
+          - os: macos-14
+            arch: arm64
+            bundles: "app,dmg"
+            artifact_name: prevu-macos-arm64-bundles
             artifact_paths: |
               target/release/bundle/**/*.dmg
               target/release/bundle/macos/**/*.app
@@ -65,12 +74,20 @@ jobs:
             librsvg2-dev \
             patchelf \
             libwebkit2gtk-4.1-dev \
+            libwebkit2gtk-4.1-0 \
             libgtk-3-dev \
+            libgtk-3-0 \
             libsoup-3.0-dev \
+            libegl1 \
+            libgl1 \
+            libgl1-mesa-dri \
+            libgbm1 \
+            libdrm2 \
+            xvfb \
             imagemagick
 
       - name: Install macOS system dependencies
-        if: matrix.os == 'macos-latest'
+        if: startsWith(matrix.os, 'macos-')
         run: brew install imagemagick
 
       - name: Setup Rust stable toolchain
@@ -94,6 +111,24 @@ jobs:
 
       - name: Build Tauri app
         run: npm run tauri -- build --bundles ${{ matrix.bundles }}
+
+      - name: Linux runtime smoke test (detect EGL startup crash)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          set -euo pipefail
+          BIN_PATH="target/release/prevu-desktop"
+          if [ ! -x "$BIN_PATH" ]; then
+            BIN_PATH="target/release/prevu"
+          fi
+          echo "Testing binary: $BIN_PATH"
+          LOG_FILE="$(mktemp)"
+          xvfb-run -a sh -c "\"$BIN_PATH\" >\"$LOG_FILE\" 2>&1 & pid=\$!; sleep 6; kill \$pid 2>/dev/null || true; wait \$pid || true"
+          if grep -qi "EGL_BAD_PARAMETER" "$LOG_FILE"; then
+            echo "Detected EGL_BAD_PARAMETER during startup:"
+            cat "$LOG_FILE"
+            exit 1
+          fi
+          echo "No EGL_BAD_PARAMETER detected in startup logs."
 
       - name: Upload build artifact (for release job)
         uses: actions/upload-artifact@v4
@@ -148,7 +183,8 @@ jobs:
             | Platform | File |
             |----------|------|
             | 🪟 Windows | `.exe` (NSIS installer) or `.msi` |
-            | 🍎 macOS | `.dmg` |
+            | 🍎 macOS (Intel) | `.dmg` |
+            | 🍎 macOS (Apple Silicon) | `.dmg` |
             | 🐧 Linux | `.AppImage` or `.deb` |
 
             > **Note:** macOS and Windows builds are not code-signed.
