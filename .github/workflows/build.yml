@@ -24,14 +24,6 @@ jobs:
             artifact_paths: |
               target/release/bundle/**/*.msi
               target/release/bundle/**/*.exe
-          - os: macos-13
-            arch: x64
-            bundles: "app,dmg"
-            artifact_name: prevu-macos-x64-bundles
-            artifact_paths: |
-              target/release/bundle/**/*.dmg
-              target/release/bundle/macos/**/*.app
-              target/release/bundle/macos/**/*.app/**
           - os: macos-14
             arch: arm64
             bundles: "app,dmg"

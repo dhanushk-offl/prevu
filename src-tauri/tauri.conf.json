@@ -1,6 +1,6 @@
 {
   "productName": "PREVU",
-  "version": "0.1.3",
+  "version": "0.1.5",
   "identifier": "dev.prevu.desktop",
   "build": {
     "beforeDevCommand": "npm --prefix frontend run dev",
