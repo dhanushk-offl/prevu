@@ -1,11 +1,12 @@
 <p align="center">
-  <img src="logo.png" alt="PREVU" width="100" />
+  <img src="logo.png" alt="PREVU" width="90" />
 </p>
 
-<h2 align="center">PREVU</h2>
+<h1 align="center">PREVU</h1>
 
 <p align="center">
-  The Postman for OG Images — inspect, validate, and preview your site's social metadata without a public URL.
+  <b>The Postman for OG Images.</b><br/>
+  Inspect, validate, and preview your site's social metadata — no public URL needed.
 </p>
 
 <p align="center">
@@ -24,14 +25,27 @@
 
 ---
 
-> [!WARNING]
-> This is very much in beta and might be buggy here and there (but hope you have a good experience!).
+## 🎬 See It in Action
 
-> Most OG image issues are discovered only after deploying. PREVU brings that feedback loop to your local machine — paste any URL and instantly see how it renders across every major social platform, complete with validation, before you ever push.
+<p align="center">
+  <a href="https://youtu.be/LRSPw2DTqvY?si=OIiLq7gdZ2iD1lOI">
+    <img src="https://img.youtube.com/vi/LRSPw2DTqvY/maxresdefault.jpg" alt="PREVU Demo" width="700" style="border-radius: 12px;" />
+  </a>
+  <br/>
+  <a href="https://youtu.be/LRSPw2DTqvY?si=OIiLq7gdZ2iD1lOI">▶️ Watch the full demo on YouTube</a>
+</p>
 
 ---
 
-## Screenshots
+## ✨ Why PREVU?
+
+> Most OG image issues are discovered only *after* deploying. PREVU closes that feedback loop — paste any URL and instantly see how it renders across every major social platform, with full validation, right on your local machine.
+
+No more pushing to staging just to check a link preview. No more broken thumbnails going live. **Ship with confidence.**
+
+---
+
+## 📸 Screenshots
 
 | Home | Preview | Validation |
 |------|---------|------------|
@@ -39,166 +53,140 @@
 
 ---
 
-## Download
+## 🚀 Features
 
-Get the latest installer from the [**Releases page**](https://github.com/dhanushk-offl/prevu/releases).
+| | Feature |
+|---|---|
+| 🔍 | **Inspect any URL** — `localhost`, staging, or production |
+| 🏷️ | **Extract all metadata** — Open Graph and Twitter Card tags at a glance |
+| ✅ | **Validate** — required tags, image dimensions, aspect ratio, and file size |
+| 👀 | **Social Previews** — realistic renders for Twitter, LinkedIn, Discord, WhatsApp & Facebook |
+| 📋 | **Clipboard auto-preview** — automatically inspects URLs you copy |
+| 🔄 | **Watch mode** — re-inspects every 5 seconds during active development |
+| ⚡ | **CLI included** — `prevu inspect <url>` shares core logic with the desktop app |
+| 🪶 | **Lightweight** — Tauri binary with a minimal memory footprint |
+
+---
+
+## 📦 Download
+
+Get the latest installer from the [**Releases page →**](https://github.com/dhanushk-offl/prevu/releases)
 
 | Platform | Installer |
 |----------|-----------|
-| Windows | `.exe` (NSIS) · `.msi` |
-| macOS | `.dmg` |
-| Linux | `.AppImage` · `.deb` · Arch AUR (`yay -S prevu`) |
+| 🪟 Windows | `.exe` (NSIS) · `.msi` |
+| 🍎 macOS | `.dmg` (Intel & Apple Silicon) |
+| 🐧 Linux | `.AppImage` · `.deb` · Arch AUR |
 
-> Builds are currently unsigned. On macOS: System Settings → Privacy & Security → Open Anyway. On Windows: SmartScreen → More Info → Run Anyway.
+> ⚠️ Builds are currently unsigned. See the platform-specific notes below to bypass Gatekeeper / SmartScreen.
 
 ---
 
-## Installation
+## 🛠️ Installation
 
-### Windows
+<details>
+<summary><b>🪟 Windows</b></summary>
 
 **Using the NSIS installer (`.exe`) — recommended**
 
-1. Download `PREVU_x.x.x_x64-setup.exe` from the [Releases page](https://github.com/dhanushk-offl/prevu/releases)
+1. Download `PREVU_x.x.x_x64-setup.exe` from [Releases](https://github.com/dhanushk-offl/prevu/releases)
 2. Double-click the installer
-3. If **Windows SmartScreen** blocks the app:
-   - Click **More info**
-   - Click **Run anyway**
-4. Follow the installer steps and launch PREVU from the Start Menu
+3. If **Windows SmartScreen** blocks it → **More info → Run anyway**
+4. Follow the wizard and launch from the Start Menu
 
 **Using the MSI installer (`.msi`)**
 
-1. Download `PREVU_x.x.x_x64_en-US.msi` from the [Releases page](https://github.com/dhanushk-offl/prevu/releases)
-2. Double-click the `.msi` file
-3. If prompted by SmartScreen, click **More info → Run anyway**
-4. Follow the installation wizard
+1. Download `PREVU_x.x.x_x64_en-US.msi`
+2. Double-click and follow the wizard (SmartScreen → **More info → Run anyway**)
 
-> **Why does SmartScreen appear?**  
-> PREVU builds are not Authenticode-signed yet. SmartScreen flags unsigned executables by default. The app is safe — you can verify the source on this repository.
+> SmartScreen appears because PREVU is not Authenticode-signed yet. The app is safe — verify the source here.
 
----
+</details>
 
-### macOS
+<details>
+<summary><b>🍎 macOS</b></summary>
 
-1. Download `PREVU_x.x.x_x64.dmg` (Intel) or `PREVU_x.x.x_aarch64.dmg` (Apple Silicon) from the [Releases page](https://github.com/dhanushk-offl/prevu/releases)
-2. Open **Finder** and navigate to your **Downloads** folder
-3. Double-click the downloaded `.dmg` file to mount it (you'll see a new PREVU volume appear on your Desktop)
-4. Drag the **PREVU** app icon into your **Applications** folder
-5. Eject the PREVU volume by clicking the eject button next to it in Finder
-6. Open **Launchpad** or **Applications** folder and double-click **PREVU** to launch
+1. Download the `.dmg` for your chip — `x64` (Intel) or `aarch64` (Apple Silicon)
+2. Open the `.dmg`, drag **PREVU** to **Applications**, then eject the volume
+3. Launch from Launchpad or Applications
 
-**If macOS blocks the app with "damaged" or "cannot be opened":**
+**If macOS says the app is "damaged" or "cannot be opened":**
 
-**Option A (GUI - recommended):**
-1. Open **System Settings** → **Privacy & Security**
-2. Scroll down to find _"PREVU was blocked from use because it is not from an identified developer"_
-3. Click **Open Anyway**
-4. In the confirmation dialog, click **Open**
+**Option A — GUI:**
+> System Settings → Privacy & Security → scroll down → **Open Anyway**
 
-**Option B (Terminal):**
-1. Open **Terminal** app (search for it in Spotlight or find it in Applications → Utilities)
-2. Run this command to remove the quarantine flag:
-   ```bash
-   xattr -cr /Applications/PREVU.app
-   ```
-3. Launch PREVU normally
+**Option B — Terminal:**
+```bash
+xattr -cr /Applications/PREVU.app
+```
 
-> **Why does this happen?**  
-> PREVU builds are not code-signed with an Apple Developer ID yet. macOS Gatekeeper blocks unsigned apps by default for security. The app is safe — you can verify the source on this repository.
+> macOS Gatekeeper blocks apps not signed with an Apple Developer ID. PREVU is not notarized yet — `xattr -cr` is the standard developer workaround.
 
-> **Why does Gatekeeper appear?**  
-> macOS requires apps to be notarized by Apple or signed with a Developer ID certificate. PREVU is not notarized yet. The `xattr -cr` command is the standard developer workaround for this.
+</details>
 
----
+<details>
+<summary><b>🐧 Linux</b></summary>
 
-### Linux
-
-**Arch Linux (AUR)**
-
+**Arch Linux (AUR)** — install directly on your Arch machine with:
 ```bash
 yay -S prevu
 ```
 
-**AppImage (universal — recommended)**
-
-1. Download `PREVU_x.x.x_amd64.AppImage` from the [Releases page](https://github.com/dhanushk-offl/prevu/releases)
-2. Make it executable and run:
-
+**AppImage — universal, recommended**
 ```bash
 chmod +x PREVU_x.x.x_amd64.AppImage
 ./PREVU_x.x.x_amd64.AppImage
-```
 
-Optionally move it to a permanent location:
-
-```bash
+# Optionally move to PATH
 mv PREVU_x.x.x_amd64.AppImage ~/.local/bin/prevu
-chmod +x ~/.local/bin/prevu
-```
-
-Make sure `~/.local/bin` is in your `PATH`:
-
-```bash
-echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
-source ~/.bashrc
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc && source ~/.bashrc
 ```
 
 **Debian / Ubuntu (`.deb`)**
-
 ```bash
 sudo dpkg -i PREVU_x.x.x_amd64.deb
-```
-
-If there are missing dependencies:
-
-```bash
-sudo apt-get install -f
-```
-
-Launch from your app menu or run:
-
-```bash
+sudo apt-get install -f  # fix any missing deps
 prevu
 ```
 
-**Removing PREVU on Linux**
-
+**Uninstall**
 ```bash
-# AppImage — just delete the file
-rm ~/.local/bin/prevu
-
-# .deb install
-sudo dpkg -r prevu
+rm ~/.local/bin/prevu          # AppImage
+sudo dpkg -r prevu             # .deb
 ```
 
-> **Note:** PREVU requires a WebKitGTK runtime on Linux. If the app fails to launch, install it:
+> PREVU requires a WebKitGTK runtime. If the app fails to launch:
 > ```bash
-> # Ubuntu / Debian
+> # Ubuntu/Debian
 > sudo apt-get install libwebkit2gtk-4.1-0
->
 > # Fedora
 > sudo dnf install webkit2gtk4.1
->
 > # Arch
 > sudo pacman -S webkit2gtk-4.1
 > ```
 
----
-
-## Features
-
-- Inspect any URL — `localhost`, staging, or production
-- Extract and display all Open Graph and Twitter Card tags
-- Validate required tags, image dimensions, aspect ratio, and file size
-- Render realistic social previews for Twitter, LinkedIn, Discord, WhatsApp, and Facebook
-- Clipboard auto-preview — automatically inspects URLs you copy
-- Watch mode — re-inspects every 5 seconds during active development
-- Reusable CLI: `prevu inspect <url>` shares the same core logic as the desktop app
-- Lightweight Tauri binary with minimal memory footprint
+</details>
 
 ---
 
-## Tech Stack
+## 💻 CLI
+
+```bash
+cargo run --manifest-path cli/Cargo.toml -- inspect https://example.com
+cargo run --manifest-path cli/Cargo.toml -- inspect https://example.com --json
+```
+
+**Example output:**
+```
+[OK]   og:title detected
+[OK]   og:description detected
+[WARN] Missing twitter:card
+[WARN] Image resolution too small (500x260). Minimum is 600x315
+```
+
+---
+
+## 🏗️ Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
@@ -212,7 +200,7 @@ sudo dpkg -r prevu
 
 ---
 
-## Project Structure
+## 🗂️ Project Structure
 
 ```
 prevu/
@@ -233,65 +221,37 @@ prevu/
 
 ---
 
-## Development
+## 🧑‍💻 Development
 
-### Prerequisites
-
-- Node.js 20+
-- Rust stable
-- Platform Tauri deps: WebView2 (Windows), WebKitGTK (Linux)
-
-### Setup
+**Prerequisites:** Node.js 20+, Rust stable, platform Tauri deps (WebView2 on Windows, WebKitGTK on Linux)
 
 ```bash
+# Install dependencies
 npm install
 npm --prefix frontend install
-```
 
-### Run
-
-```bash
+# Run
 npm run tauri:dev     # Full desktop app with hot reload
 npm run dev           # Frontend only (browser)
-```
 
-### Build
-
-```bash
+# Build
 npm run tauri:build
 ```
 
----
-
-## CLI
-
-```bash
-cargo run --manifest-path cli/Cargo.toml -- inspect https://example.com
-cargo run --manifest-path cli/Cargo.toml -- inspect https://example.com --json
-```
-
-```
-[OK]   og:title detected
-[OK]   og:description detected
-[WARN] Missing twitter:card
-[WARN] Image resolution too small (500x260). Minimum is 600x315
-```
-
----
-
-## Contributing
-
-Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) before opening a pull request.
-
 **Adding a new platform preview:**
-
 1. Update the platform union type in `PreviewCard.tsx`
 2. Add the style mapping for the new platform
 3. Render the card in the preview tab in `Home.tsx`
 
 ---
 
-## Star History
+## 🤝 Contributing
+
+Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) before opening a pull request.
+
+---
+
+## 📈 Star History
 
 <p align="center">
   <a href="https://star-history.com/#dhanushk-offl/prevu&Date">
@@ -301,9 +261,9 @@ Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) and [C
 
 ---
 
-## Support the Project
+## ☕ Support
 
-If PREVU saved you from shipping a broken link preview, consider buying me a coffee.
+If PREVU saved you from shipping a broken link preview, consider buying me a coffee!
 
 <a href="https://buymeacoffee.com/itzmedhanu" target="_blank">
   <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" width="160" />
@@ -311,6 +271,6 @@ If PREVU saved you from shipping a broken link preview, consider buying me a cof
 
 ---
 
-## License
+## 📄 License
 
-MIT © [dhanushk-offl](https://github.com/dhanushk-offl)
+MIT © [Dhanush Kandhan](https://akadhanu.pages.dev)
