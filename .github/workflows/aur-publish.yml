@@ -55,15 +55,24 @@ jobs:
         if: steps.aur_secret.outputs.present == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
           VERSION: ${{ steps.normalize.outputs.version }}
         run: |
           set -euo pipefail
           ASSET="PREVU_${VERSION}_amd64.deb"
-          echo "Checking for release asset: ${ASSET}"
-          FOUND="$(gh release view "v${VERSION}" --json assets --jq ".assets[] | select(.name == \"${ASSET}\") | .name" 2>/dev/null || true)"
-          if [ -z "$FOUND" ]; then
+          echo "Checking ${REPO} for release asset: ${ASSET}"
+          # Pass --repo explicitly: this job never checks out the repo, so gh
+          # cannot infer the target from a git remote.
+          if ! ASSETS="$(gh release view "v${VERSION}" --repo "$REPO" --json assets --jq '.assets[].name' 2>&1)"; then
+            echo "::error::Could not read release v${VERSION}:"
+            echo "${ASSETS}"
+            exit 1
+          fi
+          if ! grep -qxF "$ASSET" <<<"$ASSETS"; then
             echo "::error::Release v${VERSION} does not contain ${ASSET}."
             echo "::error::The AUR PKGBUILD extracts a .deb, so the release must be published first."
+            echo "Assets on v${VERSION}:"
+            echo "$ASSETS"
             exit 1
           fi
           echo "Found ${ASSET} on release v${VERSION}"
