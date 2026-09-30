@@ -43,6 +43,8 @@ bun run tauri:dev
 | `bun run tauri:dev` | Tauri desktop + Vite |
 | `bun run tauri:build` | Release bundles for the host OS |
 | `bun run cli -- …` | CLI entrypoint |
+| `bun run website:dev` | Marketing site (`docs/webpage`) |
+| `bun run website:build` | Build marketing site to `docs/webpage/dist` |
 
 ## Workspace layout
 
@@ -60,9 +62,9 @@ bun run tauri -- icon logo.png
 
 ## Continuous integration
 
-- **PR Check** (`.github/workflows/pr-check.yml`): mandatory on every PR; builds Linux, Windows, and macOS
-- **Build Desktop Installers** (`.github/workflows/build.yml`): produces installers on `master` / `main`
-- **Release** (`.github/workflows/release.yml`): publishes GitHub Release artifacts
+- **PR Check** (`.github/workflows/pr-check.yml`): mandatory on every PR; builds Linux, Windows, macOS Apple Silicon (`macos-14`), and macOS Intel (`macos-13`)
+- **Build Desktop Installers** (`.github/workflows/build.yml`): produces installers on `master` / `main` (including both macOS architectures)
+- **Release** (`.github/workflows/release.yml`): publishes GitHub Release artifacts for Windows, both macOS arches, and Linux
 
 ## Tips
 

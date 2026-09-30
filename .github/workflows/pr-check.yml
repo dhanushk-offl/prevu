@@ -28,8 +28,11 @@ jobs:
           - platform: Windows
             os: windows-latest
             bundles: "nsis,msi"
-          - platform: macOS
+          - platform: macOS Apple Silicon
             os: macos-14
+            bundles: "app,dmg"
+          - platform: macOS Intel
+            os: macos-13
             bundles: "app,dmg"
 
     steps:
@@ -69,7 +72,7 @@ jobs:
             imagemagick
 
       - name: Install macOS system dependencies
-        if: matrix.platform == 'macOS'
+        if: startsWith(matrix.os, 'macos-')
         run: brew install imagemagick
 
       - name: Setup Rust stable toolchain
@@ -177,7 +180,7 @@ jobs:
           result="${{ needs.build.result }}"
           echo "Matrix build result: ${result}"
           if [ "${result}" != "success" ]; then
-            echo "::error::PR Check failed because one or more platform builds did not succeed."
+            echo "::error::PR Check failed because one or more platform builds did not succeed (Linux, Windows, macOS Apple Silicon, macOS Intel)."
             exit 1
           fi
           echo "All platform builds succeeded."

@@ -68,7 +68,7 @@ Installers are published on the [Releases](https://github.com/dhanushk-offl/prev
 | Platform | Artifacts |
 |----------|-----------|
 | Windows | `.exe` (NSIS), `.msi` |
-| macOS | `.dmg` / `.app` (Apple Silicon builds via CI) |
+| macOS | `.dmg` / `.app` (Apple Silicon + Intel) |
 | Linux | `.AppImage`, `.deb`, Arch AUR (`prevu`) |
 
 Builds are currently unsigned. Use the platform notes below if Gatekeeper or SmartScreen blocks the first launch.
@@ -160,8 +160,13 @@ More detail: [docs/development.md](docs/development.md) and [CONTRIBUTING.md](CO
 |-----|-------------|
 | [docs/development.md](docs/development.md) | Local setup, scripts, architecture notes |
 | [docs/architecture.md](docs/architecture.md) | How the desktop app, parser, and CLI fit together |
+| [docs/webpage](docs/webpage) | Marketing website (version synced from root `package.json`) |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution workflow and conventions |
 | [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | Community standards |
+
+```bash
+bun run website:dev
+```
 
 ## Project structure
 

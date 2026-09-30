@@ -8,3 +8,10 @@ target/
 package-lock.json
 **/package-lock.json
 
+# Marketing site (docs/webpage)
+docs/webpage/node_modules/
+docs/webpage/dist/
+docs/webpage/.vite/
+docs/webpage/.DS_Store
+docs/webpage/*.local
+docs/webpage/package-lock.json
