@@ -90,10 +90,17 @@ jobs:
 
       - name: Setup SSH for AUR
         if: steps.aur_secret.outputs.present == 'true'
+        env:
+          AUR_SSH_PRIVATE_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
         run: |
+          set -euo pipefail
           mkdir -p ~/.ssh
-          echo "${{ secrets.AUR_SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 700 ~/.ssh
+          # Write via env + strip CR so a mangled multiline secret does not
+          # produce "error in libcrypto" when OpenSSH loads the key.
+          printf '%s\n' "$AUR_SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
+          ssh-keygen -y -f ~/.ssh/id_ed25519 >/dev/null
           ssh-keyscan aur.archlinux.org >> ~/.ssh/known_hosts
 
       - name: Clone AUR repo
@@ -109,13 +116,16 @@ jobs:
           cd aur
           sed -i "s/^pkgver=.*/pkgver=${VERSION}/" PKGBUILD
           sed -i "s/^pkgrel=.*/pkgrel=1/" PKGBUILD
-          docker run --rm -v "$PWD:/work" archlinux:latest bash -lc "
+          # makepkg/updpkgsums refuse to run as root; install as root then
+          # drop to an unprivileged user inside the Arch container.
+          docker run --rm -v "$PWD:/work" -w /work archlinux:latest bash -lc '
             set -euo pipefail
             pacman -Sy --noconfirm base-devel pacman-contrib >/dev/null
-            cd /work
-            updpkgsums
-            makepkg --printsrcinfo > .SRCINFO
-          "
+            useradd -m builder
+            chown -R builder:builder /work
+            su builder -c "cd /work && updpkgsums && makepkg --printsrcinfo > .SRCINFO"
+          '
+          sudo chown -R "$(id -u):$(id -g)" .
           echo "--- resulting PKGBUILD version lines ---"
           grep -E '^(pkgver|pkgrel|sha256)' PKGBUILD
 
