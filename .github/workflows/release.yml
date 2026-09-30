@@ -257,14 +257,11 @@ jobs:
         if: steps.aur_secret.outputs.present == 'true'
         run: |
           set -euo pipefail
-          # GitHub's ubuntu-latest image pre-installs containerd from Docker's
-          # official APT repo, and that package Conflicts with Ubuntu's docker.io,
-          # so a plain `apt-get install docker.io` aborts with exit 100. Drop
-          # Docker's repo first and let the Ubuntu archive supply both.
-          sudo rm -f /etc/apt/sources.list.d/docker.list
-          sudo rm -f /etc/apt/sources.list.d/docker-ce.list
+          # Do not install docker.io: ubuntu-latest already ships Docker Engine
+          # (containerd.io). Installing Ubuntu's docker.io conflicts with it and
+          # aborts apt with exit 100. Use the runner-provided docker instead.
           sudo apt-get update
-          sudo apt-get install -y git openssh-client docker.io
+          sudo apt-get install -y git openssh-client
           docker --version
 
       - name: Setup SSH for AUR
