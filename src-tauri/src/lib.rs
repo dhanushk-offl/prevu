@@ -198,78 +198,124 @@ pub async fn compare_environments(staging_url: &str, production_url: &str) -> Re
     })
 }
 
-pub async fn monitor_site_metadata(site_url: &str, max_pages: usize) -> Result<SiteMonitorResult, InspectError> {
-    let page_limit = max_pages.clamp(1, 500);
-    let (urls, discovery_source) = parser::discover_site_pages(site_url, page_limit).await?;
-    let client = parser::build_http_client()?;
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct SiteDiscoveryResult {
+    pub site_url: String,
+    pub discovery_source: String,
+    pub urls: Vec<String>,
+}
 
+fn map_monitor_page(url: String, outcome: Result<InspectResult, InspectError>) -> SiteMonitorPageResult {
+    match outcome {
+        Ok(result) => {
+            let missing_image = result.meta.og_image.is_none();
+            let missing_desc = result.meta.og_description.is_none();
+            let invalid_size = result.validation.warnings.iter().any(|w| {
+                w.contains("Image resolution too small") || w.contains("Incorrect aspect ratio")
+            });
+
+            SiteMonitorPageResult {
+                url,
+                title: result
+                    .meta
+                    .og_title
+                    .clone()
+                    .or_else(|| result.meta.twitter_title.clone()),
+                image_url: result
+                    .meta
+                    .og_image
+                    .clone()
+                    .or_else(|| result.meta.twitter_image.clone()),
+                status: if result.validation.warnings.is_empty() {
+                    "OK".to_owned()
+                } else {
+                    "Issues".to_owned()
+                },
+                missing_og_image: missing_image,
+                missing_description: missing_desc,
+                invalid_image_size: invalid_size,
+                warning_count: result.validation.warnings.len(),
+                error: None,
+            }
+        }
+        Err(err) => SiteMonitorPageResult {
+            url,
+            title: None,
+            image_url: None,
+            status: "Error".to_owned(),
+            missing_og_image: false,
+            missing_description: false,
+            invalid_image_size: false,
+            warning_count: 0,
+            error: Some(err.to_string()),
+        },
+    }
+}
+
+pub async fn discover_site_pages(site_url: &str, max_pages: usize) -> Result<SiteDiscoveryResult, InspectError> {
+    let page_limit = max_pages.clamp(1, 1000);
+    let (urls, discovery_source) = parser::discover_site_pages(site_url, page_limit).await?;
+    Ok(SiteDiscoveryResult {
+        site_url: site_url.to_owned(),
+        discovery_source,
+        urls,
+    })
+}
+
+/// Inspect a batch of URLs concurrently (intended for progressive site monitoring).
+pub async fn monitor_inspect_batch(urls: Vec<String>) -> Result<Vec<SiteMonitorPageResult>, InspectError> {
+    let client = parser::build_http_client()?;
+    let mut set = tokio::task::JoinSet::new();
+
+    for (index, raw) in urls.into_iter().enumerate() {
+        let url = raw.trim().to_owned();
+        if url.is_empty() {
+            continue;
+        }
+        let client = client.clone();
+        set.spawn(async move {
+            let outcome = parser::inspect_url_with_client(&client, &url).await;
+            (index, map_monitor_page(url, outcome))
+        });
+    }
+
+    let mut pages = Vec::with_capacity(set.len());
+    while let Some(joined) = set.join_next().await {
+        pages.push(joined.map_err(|err| InspectError::Unexpected(err.to_string()))?);
+    }
+    pages.sort_by_key(|(index, _)| *index);
+    Ok(pages.into_iter().map(|(_, page)| page).collect())
+}
+
+pub async fn monitor_site_metadata(site_url: &str, max_pages: usize) -> Result<SiteMonitorResult, InspectError> {
+    let discovery = discover_site_pages(site_url, max_pages).await?;
     let mut missing_og_image = 0usize;
     let mut missing_description = 0usize;
     let mut invalid_image_size = 0usize;
     let mut pages = Vec::new();
 
-    for url in urls {
-        match parser::inspect_url_with_client(&client, &url).await {
-            Ok(result) => {
-                let missing_image = result.meta.og_image.is_none();
-                let missing_desc = result.meta.og_description.is_none();
-                let invalid_size = result.validation.warnings.iter().any(|w| {
-                    w.contains("Image resolution too small") || w.contains("Incorrect aspect ratio")
-                });
-
-                if missing_image {
-                    missing_og_image += 1;
-                }
-                if missing_desc {
-                    missing_description += 1;
-                }
-                if invalid_size {
-                    invalid_image_size += 1;
-                }
-
-                pages.push(SiteMonitorPageResult {
-                    url,
-                    title: result
-                        .meta
-                        .og_title
-                        .clone()
-                        .or_else(|| result.meta.twitter_title.clone()),
-                    image_url: result
-                        .meta
-                        .og_image
-                        .clone()
-                        .or_else(|| result.meta.twitter_image.clone()),
-                    status: if result.validation.warnings.is_empty() {
-                        "OK".to_owned()
-                    } else {
-                        "Issues".to_owned()
-                    },
-                    missing_og_image: missing_image,
-                    missing_description: missing_desc,
-                    invalid_image_size: invalid_size,
-                    warning_count: result.validation.warnings.len(),
-                    error: None,
-                });
+    // Concurrent chunks keep large scans responsive without flooding hosts.
+    const CHUNK: usize = 10;
+    for chunk in discovery.urls.chunks(CHUNK) {
+        let batch = monitor_inspect_batch(chunk.to_vec()).await?;
+        for page in batch {
+            if page.missing_og_image {
+                missing_og_image += 1;
             }
-            Err(err) => {
-                pages.push(SiteMonitorPageResult {
-                    url,
-                    title: None,
-                    image_url: None,
-                    status: "Error".to_owned(),
-                    missing_og_image: false,
-                    missing_description: false,
-                    invalid_image_size: false,
-                    warning_count: 0,
-                    error: Some(err.to_string()),
-                });
+            if page.missing_description {
+                missing_description += 1;
             }
+            if page.invalid_image_size {
+                invalid_image_size += 1;
+            }
+            pages.push(page);
         }
     }
 
     Ok(SiteMonitorResult {
-        site_url: site_url.to_owned(),
-        discovery_source,
+        site_url: discovery.site_url,
+        discovery_source: discovery.discovery_source,
         pages_scanned: pages.len(),
         missing_og_image,
         missing_description,

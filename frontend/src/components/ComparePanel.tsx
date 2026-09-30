@@ -58,7 +58,7 @@ export default function ComparePanel({
         result.differences.length > 0 ? (
           <div className="space-y-2">
             {result.differences.map((diff) => (
-              <div key={diff.field} className="rounded-xl border border-amber-200 bg-amber-50/90 p-3 text-xs">
+              <div key={diff.field} className="border border-amber-200 bg-amber-50 p-3 text-xs">
                 <p className="mb-1 font-semibold text-amber-800">{diff.field} changed</p>
                 <p className="text-amber-900"><span className="font-semibold">Staging:</span> {diff.staging || "(missing)"}</p>
                 <p className="text-amber-900"><span className="font-semibold">Production:</span> {diff.production || "(missing)"}</p>

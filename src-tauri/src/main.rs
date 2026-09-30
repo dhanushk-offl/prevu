@@ -2,12 +2,15 @@
 
 use prevu_core::{
     batch_inspect_urls as batch_inspect_urls_core, clipboard_watcher,
-    compare_environments as compare_environments_core, inspect_url as inspect_url_core,
+    compare_environments as compare_environments_core,
+    discover_site_pages as discover_site_pages_core, inspect_url as inspect_url_core,
+    monitor_inspect_batch as monitor_inspect_batch_core,
     monitor_site_metadata as monitor_site_metadata_core, BatchInspectResult, CompareResult,
-    InspectResult, SiteMonitorResult,
+    InspectResult, SiteDiscoveryResult, SiteMonitorPageResult, SiteMonitorResult,
 };
 use rfd::FileDialog;
 use std::fs;
+use tauri::{LogicalSize, Manager};
 
 #[cfg(target_os = "linux")]
 fn set_env_if_unset(key: &str, value: &str) {
@@ -58,6 +61,20 @@ async fn batch_inspect_urls(urls: Vec<String>) -> Result<BatchInspectResult, Str
 #[tauri::command]
 async fn compare_environments(staging_url: String, production_url: String) -> Result<CompareResult, String> {
     compare_environments_core(&staging_url, &production_url)
+        .await
+        .map_err(|err| err.to_string())
+}
+
+#[tauri::command]
+async fn discover_site_pages(site_url: String, max_pages: Option<usize>) -> Result<SiteDiscoveryResult, String> {
+    discover_site_pages_core(&site_url, max_pages.unwrap_or(200))
+        .await
+        .map_err(|err| err.to_string())
+}
+
+#[tauri::command]
+async fn monitor_inspect_batch(urls: Vec<String>) -> Result<Vec<SiteMonitorPageResult>, String> {
+    monitor_inspect_batch_core(urls)
         .await
         .map_err(|err| err.to_string())
 }
@@ -121,14 +138,47 @@ fn open_external_url(url: String) -> Result<(), String> {
     Ok(())
 }
 
+fn apply_min_window_size(window: &tauri::WebviewWindow) {
+    // Prevent shrinking past ~50% of the current/primary monitor.
+    // Fallback floors keep the shell usable on unusual displays.
+    let monitor = window
+        .current_monitor()
+        .ok()
+        .flatten()
+        .or_else(|| window.primary_monitor().ok().flatten());
+
+    let (min_w, min_h) = if let Some(monitor) = monitor {
+        let size = monitor.size();
+        let scale = monitor.scale_factor().max(1.0);
+        let width = size.width as f64 / scale;
+        let height = size.height as f64 / scale;
+        (
+            (width * 0.5).round().clamp(760.0, 1400.0),
+            (height * 0.5).round().clamp(520.0, 900.0),
+        )
+    } else {
+        (800.0, 560.0)
+    };
+
+    let _ = window.set_min_size(Some(LogicalSize::new(min_w, min_h)));
+}
+
 fn main() {
     configure_linux_graphics_fallbacks();
 
     tauri::Builder::default()
+        .setup(|app| {
+            if let Some(window) = app.get_webview_window("main") {
+                apply_min_window_size(&window);
+            }
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             inspect_url,
             batch_inspect_urls,
             compare_environments,
+            discover_site_pages,
+            monitor_inspect_batch,
             monitor_site_metadata,
             read_clipboard_url,
             save_workspace_dialog,

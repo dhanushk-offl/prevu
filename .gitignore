@@ -5,3 +5,6 @@ target/
 .DS_Store
 *.log
 .vscode/
+package-lock.json
+**/package-lock.json
+

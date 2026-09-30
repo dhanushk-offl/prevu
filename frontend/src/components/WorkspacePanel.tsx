@@ -1,3 +1,5 @@
+import { Switch } from "./ui/switch";
+
 export type WorkspaceHistoryItem = {
   id: string;
   mode: "single" | "batch" | "compare";
@@ -72,7 +74,7 @@ export default function WorkspacePanel({
             <button
               key={item.id}
               onClick={() => onReplay(item)}
-              className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-left text-xs transition hover:border-slate-300 hover:bg-slate-50"
+              className="w-full border border-[var(--line)] bg-white p-2.5 text-left text-xs transition hover:bg-[var(--surface-muted)]"
             >
               <p className="font-semibold text-slate-800">[{item.mode.toUpperCase()}] {item.title}</p>
               <p className="truncate text-slate-500" title={item.detail}>{item.detail}</p>
@@ -93,14 +95,9 @@ type ToggleProps = {
 
 function Toggle({ label, value, onChange }: ToggleProps) {
   return (
-    <label className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
-      <span className="text-slate-700">{label}</span>
-      <input
-        type="checkbox"
-        checked={value}
-        onChange={(e) => onChange(e.target.checked)}
-        className="h-4 w-4 rounded border-slate-300"
-      />
+    <label className="flex items-center justify-between gap-3 border border-[var(--line)] bg-[var(--surface-soft)] px-3 py-2.5">
+      <span className="text-xs font-medium text-slate-700">{label}</span>
+      <Switch checked={value} onCheckedChange={onChange} aria-label={label} />
     </label>
   );
 }
