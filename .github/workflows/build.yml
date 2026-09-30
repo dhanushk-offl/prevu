@@ -134,9 +134,9 @@ jobs:
         run: |
           set -euo pipefail
           for arch in aarch64 x64; do
-            DMG="$(find target -path "*/release/bundle/macos/*.${arch}.dmg" -print -quit || true)"
+            DMG="$(find target -path "*/release/bundle/dmg/*.${arch}.dmg" -print -quit || true)"
             if [ -z "$DMG" ]; then
-              DMG="$(find target -path '*/release/bundle/macos/*.dmg' -name "*${arch}*" -print -quit || true)"
+              DMG="$(find target -path '*/release/bundle/dmg/*.dmg' -name "*${arch}*" -print -quit || true)"
             fi
             if [ -z "$DMG" ]; then
               echo "::error::No $arch DMG was produced."
