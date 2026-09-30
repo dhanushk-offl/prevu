@@ -202,16 +202,38 @@ jobs:
           body: |
             ## PREVU ${{ github.ref_name }}
 
+            Catch broken social previews before you ship. Inspects Open Graph and
+            Twitter Card metadata on localhost, staging, or production.
+
             ### Download
 
             | Platform | File |
             |----------|------|
             | 🪟 Windows | `.exe` (NSIS installer) or `.msi` |
-            | 🍎 macOS (Apple Silicon) | `.dmg` |
+            | 🍎 macOS (Apple Silicon) | `.dmg` — `PREVU_*_aarch64.dmg` |
+            | 🍎 macOS (Intel) | `.dmg` — `PREVU_*_x64.dmg` |
             | 🐧 Linux | `.AppImage` or `.deb` (Arch AUR: `yay -S prevu`) |
+
+            Pick the macOS DMG that matches your hardware — Apple Silicon and Intel
+            are separate files. If you are unsure, check
+            [Apple's guide](https://support.apple.com/en-us/HT210742).
 
             > **Note:** macOS and Windows builds are not code-signed.
             > You may need to allow the app through Gatekeeper (macOS) or SmartScreen (Windows).
+
+            ### Highlights
+
+            - **macOS Intel builds are now published.** Previously only Apple Silicon
+              DMGs were documented, though both architectures have been shipping.
+            - **New marketing site.** Features, screenshots, and per-platform download
+              links. Download buttons resolve live from the GitHub Releases API, so
+              they always point at the latest published build.
+            - **Security:** Vite upgraded to 6.4.3 in both the desktop app and the website
+              to clear a published advisory.
+            - **CI:** cross-platform PR checks are now mandatory, so a broken Windows,
+              macOS, or Linux build is caught before merge.
+
+            Full details in [CHANGELOG.md](https://github.com/dhanushk-offl/prevu/blob/${{ github.ref_name }}/CHANGELOG.md).
           files: release-files/*
 
   update-aur:
@@ -233,7 +255,17 @@ jobs:
 
       - name: Install dependencies
         if: steps.aur_secret.outputs.present == 'true'
-        run: sudo apt-get update && sudo apt-get install -y git openssh-client docker.io
+        run: |
+          set -euo pipefail
+          # GitHub's ubuntu-latest image pre-installs containerd from Docker's
+          # official APT repo, and that package Conflicts with Ubuntu's docker.io,
+          # so a plain `apt-get install docker.io` aborts with exit 100. Drop
+          # Docker's repo first and let the Ubuntu archive supply both.
+          sudo rm -f /etc/apt/sources.list.d/docker.list
+          sudo rm -f /etc/apt/sources.list.d/docker-ce.list
+          sudo apt-get update
+          sudo apt-get install -y git openssh-client docker.io
+          docker --version
 
       - name: Setup SSH for AUR
         if: steps.aur_secret.outputs.present == 'true'
