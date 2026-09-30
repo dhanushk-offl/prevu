@@ -131,7 +131,6 @@ export default function TitleBar({ title = "PREVU" }: TitleBarProps) {
   return (
     <div
       data-tauri-drag-region
-      onDoubleClick={toggleMaximize}
       className="relative flex h-8 shrink-0 select-none items-center border-b border-[var(--line)] bg-[#f3f3f3]"
     >
       <div className="z-10 flex h-full w-[108px] items-center px-3">

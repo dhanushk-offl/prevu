@@ -2,9 +2,11 @@
 
 use prevu_core::{
     batch_inspect_urls as batch_inspect_urls_core, clipboard_watcher,
-    compare_environments as compare_environments_core, inspect_url as inspect_url_core,
+    compare_environments as compare_environments_core,
+    discover_site_pages as discover_site_pages_core, inspect_url as inspect_url_core,
+    monitor_inspect_batch as monitor_inspect_batch_core,
     monitor_site_metadata as monitor_site_metadata_core, BatchInspectResult, CompareResult,
-    InspectResult, SiteMonitorResult,
+    InspectResult, SiteDiscoveryResult, SiteMonitorPageResult, SiteMonitorResult,
 };
 use rfd::FileDialog;
 use std::fs;
@@ -59,6 +61,20 @@ async fn batch_inspect_urls(urls: Vec<String>) -> Result<BatchInspectResult, Str
 #[tauri::command]
 async fn compare_environments(staging_url: String, production_url: String) -> Result<CompareResult, String> {
     compare_environments_core(&staging_url, &production_url)
+        .await
+        .map_err(|err| err.to_string())
+}
+
+#[tauri::command]
+async fn discover_site_pages(site_url: String, max_pages: Option<usize>) -> Result<SiteDiscoveryResult, String> {
+    discover_site_pages_core(&site_url, max_pages.unwrap_or(200))
+        .await
+        .map_err(|err| err.to_string())
+}
+
+#[tauri::command]
+async fn monitor_inspect_batch(urls: Vec<String>) -> Result<Vec<SiteMonitorPageResult>, String> {
+    monitor_inspect_batch_core(urls)
         .await
         .map_err(|err| err.to_string())
 }
@@ -161,6 +177,8 @@ fn main() {
             inspect_url,
             batch_inspect_urls,
             compare_environments,
+            discover_site_pages,
+            monitor_inspect_batch,
             monitor_site_metadata,
             read_clipboard_url,
             save_workspace_dialog,

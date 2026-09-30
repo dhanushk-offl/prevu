@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -32,6 +32,8 @@ const APP_AUTHOR = "dhanushk-offl";
 const REPO_URL = "https://github.com/dhanushk-offl/prevu";
 const ISSUES_URL = "https://github.com/dhanushk-offl/prevu/issues/new";
 const STAR_URL = "https://github.com/dhanushk-offl/prevu";
+const MONITOR_BATCH_SIZE = 10;
+const MONITOR_MAX_PAGES = 500;
 
 type InspectResult = {
   sourceUrl: string;
@@ -89,7 +91,21 @@ type MonitorResult = {
   pages: MonitorPage[];
 };
 
+type MonitorDiscovery = {
+  siteUrl: string;
+  discoverySource: string;
+  urls: string[];
+};
+
 type TabKey = "preview" | "meta" | "validation" | "image";
+
+function accumulateMonitorMetrics(pages: MonitorPage[]) {
+  return {
+    missingOgImage: pages.filter((p) => p.missingOgImage).length,
+    missingDescription: pages.filter((p) => p.missingDescription).length,
+    invalidImageSize: pages.filter((p) => p.invalidImageSize).length,
+  };
+}
 
 const views: { key: ViewKey; label: string; hint: string }[] = [
   { key: "inspector", label: "Inspector", hint: "Preview a single URL" },
@@ -180,6 +196,10 @@ export default function Home() {
   const [monitorSiteUrl, setMonitorSiteUrl] = useState("http://localhost:3000");
   const [monitorResult, setMonitorResult] = useState<MonitorResult | null>(null);
   const [monitorLoading, setMonitorLoading] = useState(false);
+  const [monitorScanningMore, setMonitorScanningMore] = useState(false);
+  const [monitorVisibleCount, setMonitorVisibleCount] = useState(MONITOR_BATCH_SIZE);
+  const [monitorDiscoveredTotal, setMonitorDiscoveredTotal] = useState(0);
+  const monitorRunIdRef = useRef(0);
 
   const [settings, setSettings] = useState<Settings>(() => readStorage(SETTINGS_KEY, defaultSettings));
   const [history, setHistory] = useState<HistoryItem[]>(() => readStorage(HISTORY_KEY, [] as HistoryItem[]));
@@ -257,18 +277,70 @@ export default function Home() {
   const runMonitor = async () => {
     const target = monitorSiteUrl.trim();
     if (!target) return;
+
+    const runId = ++monitorRunIdRef.current;
     setMonitorLoading(true);
+    setMonitorScanningMore(false);
+    setMonitorResult(null);
+    setMonitorVisibleCount(MONITOR_BATCH_SIZE);
+    setMonitorDiscoveredTotal(0);
     setError(null);
+
     try {
-      const data = await invoke<MonitorResult>("monitor_site_metadata", { siteUrl: target, maxPages: 200 });
-      setMonitorResult(data);
-      addHistory("monitor", target, `Scanned ${data.pagesScanned} pages`);
+      const discovery = await invoke<MonitorDiscovery>("discover_site_pages", {
+        siteUrl: target,
+        maxPages: MONITOR_MAX_PAGES,
+      });
+      if (runId !== monitorRunIdRef.current) return;
+
+      setMonitorDiscoveredTotal(discovery.urls.length);
+      let pages: MonitorPage[] = [];
+
+      for (let offset = 0; offset < discovery.urls.length; offset += MONITOR_BATCH_SIZE) {
+        if (runId !== monitorRunIdRef.current) return;
+
+        const chunk = discovery.urls.slice(offset, offset + MONITOR_BATCH_SIZE);
+        const batchPages = await invoke<MonitorPage[]>("monitor_inspect_batch", { urls: chunk });
+        if (runId !== monitorRunIdRef.current) return;
+
+        pages = [...pages, ...batchPages];
+        const metrics = accumulateMonitorMetrics(pages);
+        setMonitorResult({
+          siteUrl: discovery.siteUrl,
+          discoverySource: discovery.discoverySource,
+          pagesScanned: pages.length,
+          missingOgImage: metrics.missingOgImage,
+          missingDescription: metrics.missingDescription,
+          invalidImageSize: metrics.invalidImageSize,
+          pages,
+        });
+
+        // First batch is enough to drop the blocking loader and show results.
+        if (offset === 0) {
+          setMonitorLoading(false);
+          if (discovery.urls.length > MONITOR_BATCH_SIZE) {
+            setMonitorScanningMore(true);
+          }
+        }
+      }
+
+      if (runId !== monitorRunIdRef.current) return;
+      addHistory("monitor", target, `Scanned ${pages.length} pages`);
       maybeAutoSaveWorkspace("monitor");
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      if (runId === monitorRunIdRef.current) {
+        setError(err instanceof Error ? err.message : String(err));
+      }
     } finally {
-      setMonitorLoading(false);
+      if (runId === monitorRunIdRef.current) {
+        setMonitorLoading(false);
+        setMonitorScanningMore(false);
+      }
     }
+  };
+
+  const loadMoreMonitorPages = () => {
+    setMonitorVisibleCount((prev) => prev + MONITOR_BATCH_SIZE);
   };
 
   const exportMonitorPdf = async () => {
@@ -642,8 +714,8 @@ export default function Home() {
                       <p className="panel-subtitle">Scan sitemap + linked pages and summarize metadata health.</p>
                     </div>
                     <div className="flex gap-2">
-                      <button className="btn-primary" onClick={runMonitor} disabled={monitorLoading}>
-                        {monitorLoading ? "Scanning..." : "Scan Site"}
+                      <button className="btn-primary" onClick={runMonitor} disabled={monitorLoading || monitorScanningMore}>
+                        {monitorLoading ? "Scanning..." : monitorScanningMore ? "Scanning more..." : "Scan Site"}
                       </button>
                       <button className="btn-ghost" onClick={exportMonitorPdf} disabled={!monitorResult}>
                         PDF Report
@@ -656,7 +728,7 @@ export default function Home() {
                     className="input-shell w-full"
                     placeholder="https://example.com or http://localhost:3000"
                   />
-                  {monitorLoading ? <Loader text="Scanning site pages and validating metadata..." /> : null}
+                  {monitorLoading ? <Loader text="Discovering pages and scanning the first batch..." /> : null}
                   {monitorResult ? (
                     <div className="mt-4 space-y-4">
                       <div className="grid gap-0 border border-[var(--line)] sm:grid-cols-2 lg:grid-cols-4">
@@ -665,8 +737,17 @@ export default function Home() {
                         <Metric label="Missing description" value={String(monitorResult.missingDescription)} />
                         <Metric label="Invalid image size" value={String(monitorResult.invalidImageSize)} />
                       </div>
+                      {monitorScanningMore || monitorDiscoveredTotal > monitorResult.pagesScanned ? (
+                        <p className="text-xs text-slate-500">
+                          Showing results as batches finish
+                          {monitorDiscoveredTotal > 0
+                            ? ` · ${monitorResult.pagesScanned}/${monitorDiscoveredTotal} pages`
+                            : null}
+                          {monitorScanningMore ? " · scanning next batch…" : null}
+                        </p>
+                      ) : null}
                       <div className="grid gap-0 border border-[var(--line)] md:grid-cols-2 xl:grid-cols-3">
-                        {monitorResult.pages.slice(0, 9).map((p) => (
+                        {monitorResult.pages.slice(0, monitorVisibleCount).map((p) => (
                           <button
                             key={p.url}
                             onClick={() => p.imageUrl && setPreviewImage({ url: p.imageUrl, title: p.title || p.url })}
@@ -687,6 +768,14 @@ export default function Home() {
                           </button>
                         ))}
                       </div>
+                      {monitorVisibleCount < monitorResult.pages.length ? (
+                        <div className="flex justify-center">
+                          <button type="button" className="btn-ghost" onClick={loadMoreMonitorPages}>
+                            Load more ({Math.min(MONITOR_BATCH_SIZE, monitorResult.pages.length - monitorVisibleCount)} of{" "}
+                            {monitorResult.pages.length - monitorVisibleCount} remaining)
+                          </button>
+                        </div>
+                      ) : null}
                     </div>
                   ) : null}
                 </>

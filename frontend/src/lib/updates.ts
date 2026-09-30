@@ -13,17 +13,65 @@ export function normalizeVersion(value: string): string {
   return value.trim().replace(/^v/i, "");
 }
 
-/** Returns positive if a > b, negative if a < b, 0 if equal. */
-export function compareSemver(a: string, b: string): number {
-  const pa = normalizeVersion(a).split(/[.+-]/).map((part) => Number.parseInt(part, 10) || 0);
-  const pb = normalizeVersion(b).split(/[.+-]/).map((part) => Number.parseInt(part, 10) || 0);
-  const len = Math.max(pa.length, pb.length);
+type SemVerParts = {
+  core: [number, number, number];
+  prerelease: string[] | null;
+};
+
+function parseSemver(version: string): SemVerParts {
+  const cleaned = normalizeVersion(version);
+  const withoutBuild = cleaned.split("+", 1)[0] ?? cleaned;
+  const dash = withoutBuild.indexOf("-");
+  const coreRaw = dash === -1 ? withoutBuild : withoutBuild.slice(0, dash);
+  const preRaw = dash === -1 ? null : withoutBuild.slice(dash + 1);
+
+  const coreNums = coreRaw.split(".").map((part) => {
+    const n = Number.parseInt(part, 10);
+    return Number.isFinite(n) ? n : 0;
+  });
+  while (coreNums.length < 3) coreNums.push(0);
+
+  return {
+    core: [coreNums[0] ?? 0, coreNums[1] ?? 0, coreNums[2] ?? 0],
+    prerelease: preRaw ? preRaw.split(".").filter(Boolean) : null,
+  };
+}
+
+function comparePrerelease(a: string[], b: string[]): number {
+  const len = Math.max(a.length, b.length);
   for (let i = 0; i < len; i += 1) {
-    const left = pa[i] ?? 0;
-    const right = pb[i] ?? 0;
-    if (left !== right) return left - right;
+    const left = a[i];
+    const right = b[i];
+    if (left === undefined) return -1;
+    if (right === undefined) return 1;
+
+    const leftNum = /^\d+$/.test(left);
+    const rightNum = /^\d+$/.test(right);
+    if (leftNum && rightNum) {
+      const diff = Number(left) - Number(right);
+      if (diff !== 0) return diff;
+      continue;
+    }
+    if (leftNum !== rightNum) return leftNum ? -1 : 1;
+    if (left !== right) return left < right ? -1 : 1;
   }
   return 0;
+}
+
+/** Returns positive if a > b, negative if a < b, 0 if equal. Build metadata is ignored. */
+export function compareSemver(a: string, b: string): number {
+  const left = parseSemver(a);
+  const right = parseSemver(b);
+
+  for (let i = 0; i < 3; i += 1) {
+    const diff = left.core[i] - right.core[i];
+    if (diff !== 0) return diff;
+  }
+
+  if (!left.prerelease && !right.prerelease) return 0;
+  if (!left.prerelease) return 1;
+  if (!right.prerelease) return -1;
+  return comparePrerelease(left.prerelease, right.prerelease);
 }
 
 export function isNewerVersion(latest: string, current: string): boolean {

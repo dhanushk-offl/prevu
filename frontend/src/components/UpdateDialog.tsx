@@ -1,3 +1,4 @@
+import { useEffect, useId, useRef } from "react";
 import { ArrowSquareOut, DownloadSimple, X } from "@phosphor-icons/react";
 
 type UpdateDialogProps = {
@@ -10,6 +11,13 @@ type UpdateDialogProps = {
   onClose: () => void;
 };
 
+function getFocusable(container: HTMLElement): HTMLElement[] {
+  const nodes = container.querySelectorAll<HTMLElement>(
+    'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])',
+  );
+  return Array.from(nodes).filter((el) => !el.hasAttribute("disabled") && el.tabIndex !== -1);
+}
+
 export default function UpdateDialog({
   currentVersion,
   latestVersion,
@@ -19,6 +27,10 @@ export default function UpdateDialog({
   onUpdate,
   onClose,
 }: UpdateDialogProps) {
+  const titleId = useId();
+  const panelRef = useRef<HTMLDivElement>(null);
+  const previouslyFocused = useRef<HTMLElement | null>(null);
+
   const snippet = (releaseNotes || "")
     .replace(/\r/g, "")
     .split("\n")
@@ -27,18 +39,71 @@ export default function UpdateDialog({
     .slice(0, 4)
     .join(" ");
 
+  useEffect(() => {
+    previouslyFocused.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const panel = panelRef.current;
+    if (!panel) return;
+
+    const focusables = getFocusable(panel);
+    (focusables[0] ?? panel).focus();
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+      if (event.key !== "Tab") return;
+
+      const items = getFocusable(panel);
+      if (items.length === 0) {
+        event.preventDefault();
+        panel.focus();
+        return;
+      }
+
+      const first = items[0];
+      const last = items[items.length - 1];
+      const active = document.activeElement;
+
+      if (event.shiftKey) {
+        if (active === first || !panel.contains(active)) {
+          event.preventDefault();
+          last.focus();
+        }
+      } else if (active === last || !panel.contains(active)) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      previouslyFocused.current?.focus();
+    };
+  }, [onClose]);
+
   return (
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/40 p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="update-dialog-title"
+      role="presentation"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
     >
-      <div className="w-full max-w-md overflow-hidden border border-[var(--line)] bg-white">
+      <div
+        ref={panelRef}
+        className="w-full max-w-md overflow-hidden border border-[var(--line)] bg-white outline-none"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+      >
         <div className="flex items-start justify-between gap-3 border-b border-[var(--line)] px-4 py-3">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Update available</p>
-            <h2 id="update-dialog-title" className="mt-1 text-sm font-semibold text-slate-900">
+            <h2 id={titleId} className="mt-1 text-sm font-semibold text-slate-900">
               {releaseName || `PREVU ${latestVersion}`}
             </h2>
           </div>

@@ -107,6 +107,7 @@ jobs:
           set -euo pipefail
           APPIMAGE="$(find target/release/bundle/appimage -maxdepth 1 -name '*.AppImage' -print -quit)"
           test -n "$APPIMAGE"
+          APPIMAGE="$(cd "$(dirname "$APPIMAGE")" && pwd)/$(basename "$APPIMAGE")"
           chmod +x "$APPIMAGE"
           EXTRACT_DIR="$(mktemp -d)"
           cd "$EXTRACT_DIR"
@@ -119,7 +120,12 @@ jobs:
           TARGET="$(readlink -f squashfs-root/.DirIcon || true)"
           echo ".DirIcon -> $(readlink squashfs-root/.DirIcon || echo '(file)')"
           test -f "$TARGET"
-          file "$TARGET" | grep -qi 'PNG\|JPEG\|SVG' || file "$TARGET"
+          FILE_TYPE="$(file -b "$TARGET")"
+          echo "Detected .DirIcon type: $FILE_TYPE"
+          if ! echo "$FILE_TYPE" | grep -qiE 'PNG|JPEG|SVG'; then
+            echo "FATAL: .DirIcon must be PNG/JPEG/SVG, got: $FILE_TYPE"
+            exit 1
+          fi
           echo "AppImage .DirIcon OK"
 
       - name: Linux runtime smoke test (detect EGL startup crash)
