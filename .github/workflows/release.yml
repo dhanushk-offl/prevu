@@ -293,13 +293,16 @@ jobs:
           cd aur
           sed -i "s/^pkgver=.*/pkgver=${VERSION}/" PKGBUILD
           sed -i "s/^pkgrel=.*/pkgrel=1/" PKGBUILD
-          docker run --rm -v "$PWD:/work" archlinux:latest bash -lc "
+          # makepkg/updpkgsums refuse to run as root; install as root then
+          # drop to an unprivileged user inside the Arch container.
+          docker run --rm -v "$PWD:/work" -w /work archlinux:latest bash -lc '
             set -euo pipefail
             pacman -Sy --noconfirm base-devel pacman-contrib >/dev/null
-            cd /work
-            updpkgsums
-            makepkg --printsrcinfo > .SRCINFO
-          "
+            useradd -m builder
+            chown -R builder:builder /work
+            su builder -c "cd /work && updpkgsums && makepkg --printsrcinfo > .SRCINFO"
+          '
+          sudo chown -R "$(id -u):$(id -g)" .
 
       - name: Commit and push update
         if: steps.aur_secret.outputs.present == 'true'
