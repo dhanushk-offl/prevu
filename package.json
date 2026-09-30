@@ -10,9 +10,9 @@
   "scripts": {
     "dev": "bun run --cwd frontend dev",
     "build": "bun run --cwd frontend build",
-    "website:dev": "bun run --cwd website dev",
-    "website:build": "bun run --cwd website build",
-    "website:preview": "bun run --cwd website preview",
+    "website:dev": "bun run --cwd docs/webpage dev",
+    "website:build": "bun run --cwd docs/webpage build",
+    "website:preview": "bun run --cwd docs/webpage preview",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
