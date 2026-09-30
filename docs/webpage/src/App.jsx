@@ -52,8 +52,12 @@ function normalizePath(value) {
   return cleaned === "" ? "/" : cleaned;
 }
 
+const FOCUSABLE_SELECTOR =
+  'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
 function ScreenshotLightbox({ index, onClose, onPrev, onNext }) {
   const closeRef = useRef(null);
+  const dialogRef = useRef(null);
   const shot = screenshots[index];
   const hasPrev = index > 0;
   const hasNext = index < screenshots.length - 1;
@@ -63,6 +67,23 @@ function ScreenshotLightbox({ index, onClose, onPrev, onNext }) {
     closeRef.current?.focus();
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+
+    const focusable = () =>
+      Array.from(dialogRef.current?.querySelectorAll(FOCUSABLE_SELECTOR) ?? []).filter(
+        (el) => el.getClientRects().length > 0,
+      );
+
+    // Hide the page behind the dialog from the focus order and from AT.
+    const inerted = [];
+    for (let node = dialogRef.current; node && node !== document.body; node = node.parentElement) {
+      const parent = node.parentElement;
+      if (!parent) break;
+      for (const sibling of parent.children) {
+        if (sibling === node || sibling.inert) continue;
+        sibling.inert = true;
+        inerted.push(sibling);
+      }
+    }
 
     const onKeyDown = (event) => {
       if (event.key === "Escape") {
@@ -74,6 +95,25 @@ function ScreenshotLightbox({ index, onClose, onPrev, onNext }) {
       } else if (event.key === "ArrowRight") {
         event.preventDefault();
         onNext();
+      } else if (event.key === "Tab") {
+        const items = focusable();
+        if (!items.length) {
+          event.preventDefault();
+          return;
+        }
+        const first = items[0];
+        const last = items[items.length - 1];
+        const active = document.activeElement;
+        const outside = !dialogRef.current?.contains(active);
+        if (event.shiftKey) {
+          if (outside || active === first) {
+            event.preventDefault();
+            last.focus();
+          }
+        } else if (outside || active === last) {
+          event.preventDefault();
+          first.focus();
+        }
       }
     };
 
@@ -81,6 +121,7 @@ function ScreenshotLightbox({ index, onClose, onPrev, onNext }) {
     return () => {
       document.removeEventListener("keydown", onKeyDown);
       document.body.style.overflow = previousOverflow;
+      for (const el of inerted) el.inert = false;
       if (previous instanceof HTMLElement) previous.focus();
     };
   }, [index, onClose, onPrev, onNext]);
@@ -89,6 +130,7 @@ function ScreenshotLightbox({ index, onClose, onPrev, onNext }) {
 
   return (
     <div
+      ref={dialogRef}
       className="lightbox"
       role="dialog"
       aria-modal="true"
@@ -503,6 +545,15 @@ sudo apt-get install -f`}</code>
   );
 }
 
+// Tauri's default bundle names encode the Rust target, so the same extension can
+// ship more than one build (e.g. aarch64 + x64 DMGs). Distinguish them in the UI.
+function assetVariant(asset) {
+  const name = String(asset?.name || "").toLowerCase();
+  if (name.includes("aarch64") || name.includes("arm64")) return "arm64";
+  if (name.includes("x86_64") || name.includes("x64")) return "x64";
+  return null;
+}
+
 function AssetButton({ loading, label, assets }) {
   if (loading) {
     return (
@@ -518,12 +569,22 @@ function AssetButton({ loading, label, assets }) {
       </button>
     );
   }
-  const href = assets[0].browser_download_url || RELEASES;
-  return (
-    <a className="assetBtn" href={href} target="_blank" rel="noreferrer" title={assets[0].name}>
-      {label}
-    </a>
-  );
+  return assets.map((asset, i) => {
+    const variant = assetVariant(asset);
+    const text = assets.length > 1 ? `${label} · ${variant || asset.name}` : label;
+    return (
+      <a
+        key={`${asset.name || "asset"}-${i}`}
+        className="assetBtn"
+        href={asset.browser_download_url || RELEASES}
+        target="_blank"
+        rel="noreferrer"
+        title={asset.name}
+      >
+        {text}
+      </a>
+    );
+  });
 }
 
 function extLabel(ext) {

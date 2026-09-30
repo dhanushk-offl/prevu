@@ -26,21 +26,13 @@ jobs:
               target/release/bundle/**/*.msi
               target/release/bundle/**/*.exe
           - os: macos-14
-            arch: arm64
+            arch: aarch64+x64
             bundles: "app,dmg"
-            artifact_name: prevu-macos-arm64-bundles
+            artifact_name: prevu-macos-bundles
             artifact_paths: |
-              target/release/bundle/**/*.dmg
-              target/release/bundle/macos/**/*.app
-              target/release/bundle/macos/**/*.app/**
-          - os: macos-13
-            arch: x64
-            bundles: "app,dmg"
-            artifact_name: prevu-macos-x64-bundles
-            artifact_paths: |
-              target/release/bundle/**/*.dmg
-              target/release/bundle/macos/**/*.app
-              target/release/bundle/macos/**/*.app/**
+              target/*/release/bundle/**/*.dmg
+              target/*/release/bundle/macos/**/*.app
+              target/*/release/bundle/macos/**/*.app/**
           - os: ubuntu-22.04
             bundles: "appimage,deb"
             artifact_name: prevu-linux-bundles
@@ -91,6 +83,10 @@ jobs:
       - name: Setup Rust stable toolchain
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Add macOS cross-compilation target
+        if: startsWith(matrix.os, 'macos-')
+        run: rustup target add x86_64-apple-darwin
+
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
         with:
@@ -118,7 +114,37 @@ jobs:
           test -f src-tauri/icons/32x32.png
 
       - name: Build Tauri app
+        if: ${{ !startsWith(matrix.os, 'macos-') }}
         run: bun run tauri -- build --bundles ${{ matrix.bundles }}
+
+      - name: Build Tauri app (macOS Apple Silicon + Intel)
+        if: startsWith(matrix.os, 'macos-')
+        shell: bash
+        run: |
+          set -euo pipefail
+          for target in aarch64-apple-darwin x86_64-apple-darwin; do
+            echo "::group::Building $target"
+            bun run tauri -- build --target "$target" --bundles ${{ matrix.bundles }}
+            echo "::endgroup::"
+          done
+
+      - name: Verify macOS produced one DMG per architecture
+        if: startsWith(matrix.os, 'macos-')
+        shell: bash
+        run: |
+          set -euo pipefail
+          for arch in aarch64 x64; do
+            DMG="$(find target -path "*/release/bundle/macos/*.${arch}.dmg" -print -quit || true)"
+            if [ -z "$DMG" ]; then
+              DMG="$(find target -path '*/release/bundle/macos/*.dmg' -name "*${arch}*" -print -quit || true)"
+            fi
+            if [ -z "$DMG" ]; then
+              echo "::error::No $arch DMG was produced."
+              find target -type f -path '*/release/bundle/*' | sort || true
+              exit 1
+            fi
+            echo "Found $arch DMG: $DMG"
+          done
 
       - name: Verify AppImage .DirIcon
         if: startsWith(matrix.os, 'ubuntu-')
@@ -169,8 +195,8 @@ jobs:
         if: always()
         shell: bash
         run: |
-          if [ -d target/release/bundle ]; then
-            find target/release/bundle -type f | sort
+          if find target -type d -path '*/release/bundle' -print -quit 2>/dev/null | grep -q .; then
+            find target -type f -path '*/release/bundle/*' | sort
           else
             echo "No bundle directory found"
           fi

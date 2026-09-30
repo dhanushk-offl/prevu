@@ -62,7 +62,7 @@ bun run tauri -- icon logo.png
 
 ## Continuous integration
 
-- **PR Check** (`.github/workflows/pr-check.yml`): mandatory on every PR; builds Linux, Windows, macOS Apple Silicon (`macos-14`), and macOS Intel (`macos-13`)
+- **PR Check** (`.github/workflows/pr-check.yml`): mandatory on every PR; builds Linux, Windows, and macOS — the macOS leg cross-compiles both Apple Silicon (`aarch64-apple-darwin`) and Intel (`x86_64-apple-darwin`) on a single `macos-14` runner
 - **Build Desktop Installers** (`.github/workflows/build.yml`): produces installers on `master` / `main` (including both macOS architectures)
 - **Release** (`.github/workflows/release.yml`): publishes GitHub Release artifacts for Windows, both macOS arches, and Linux
 
