@@ -255,7 +255,17 @@ jobs:
 
       - name: Install dependencies
         if: steps.aur_secret.outputs.present == 'true'
-        run: sudo apt-get update && sudo apt-get install -y git openssh-client docker.io
+        run: |
+          set -euo pipefail
+          # GitHub's ubuntu-latest image pre-installs containerd from Docker's
+          # official APT repo, and that package Conflicts with Ubuntu's docker.io,
+          # so a plain `apt-get install docker.io` aborts with exit 100. Drop
+          # Docker's repo first and let the Ubuntu archive supply both.
+          sudo rm -f /etc/apt/sources.list.d/docker.list
+          sudo rm -f /etc/apt/sources.list.d/docker-ce.list
+          sudo apt-get update
+          sudo apt-get install -y git openssh-client docker.io
+          docker --version
 
       - name: Setup SSH for AUR
         if: steps.aur_secret.outputs.present == 'true'
