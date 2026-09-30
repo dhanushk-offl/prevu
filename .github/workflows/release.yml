@@ -233,7 +233,7 @@ jobs:
 
       - name: Install dependencies
         if: steps.aur_secret.outputs.present == 'true'
-        run: sudo apt-get update && sudo apt-get install -y git openssh-client docker.io
+        run: sudo apt-get update && sudo apt-get install -y git openssh-client
 
       - name: Setup SSH for AUR
         if: steps.aur_secret.outputs.present == 'true'
