@@ -1,0 +1,131 @@
+name: Publish AUR Package
+
+# Standalone republish of the Arch AUR package, for when a release succeeded but
+# the `update-aur` job in release.yml failed (or when the version needs to be
+# bumped after the fact). Does not rebuild any desktop artifacts.
+#
+# The AUR PKGBUILD references an already-published GitHub release asset, so the
+# matching `v*` tag release must already exist before running this.
+#
+# Usage: Actions -> Publish AUR Package -> Run workflow -> set "version".
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to publish to AUR, with or without the leading v (e.g. 0.1.6 or v0.1.6)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  update-aur:
+    name: Update AUR package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check AUR secret presence
+        id: aur_secret
+        env:
+          AUR_SSH_PRIVATE_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+        run: |
+          if [ -z "${AUR_SSH_PRIVATE_KEY}" ]; then
+            echo "::error::AUR_SSH_PRIVATE_KEY is not set. Cannot push to AUR."
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Normalize and validate version
+        if: steps.aur_secret.outputs.present == 'true'
+        env:
+          RAW_VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          VERSION="${RAW_VERSION#v}"
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z]+(\.[0-9A-Za-z]+)*)?$ ]]; then
+            echo "::error::Invalid version '${RAW_VERSION}'. Expected something like 0.1.6 or v0.1.6."
+            exit 1
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Verify the GitHub release asset already exists
+        if: steps.aur_secret.outputs.present == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.normalize.outputs.version }}
+        run: |
+          set -euo pipefail
+          ASSET="PREVU_${VERSION}_amd64.deb"
+          echo "Checking for release asset: ${ASSET}"
+          FOUND="$(gh release view "v${VERSION}" --json assets --jq ".assets[] | select(.name == \"${ASSET}\") | .name" 2>/dev/null || true)"
+          if [ -z "$FOUND" ]; then
+            echo "::error::Release v${VERSION} does not contain ${ASSET}."
+            echo "::error::The AUR PKGBUILD extracts a .deb, so the release must be published first."
+            exit 1
+          fi
+          echo "Found ${ASSET} on release v${VERSION}"
+
+      - name: Install dependencies
+        if: steps.aur_secret.outputs.present == 'true'
+        run: |
+          set -euo pipefail
+          # GitHub's ubuntu-latest image pre-installs containerd from Docker's
+          # official APT repo, and that package Conflicts with Ubuntu's docker.io,
+          # so a plain `apt-get install docker.io` aborts with exit 100. Drop
+          # Docker's repo first and let the Ubuntu archive supply both.
+          sudo rm -f /etc/apt/sources.list.d/docker.list
+          sudo rm -f /etc/apt/sources.list.d/docker-ce.list
+          sudo apt-get update
+          sudo apt-get install -y git openssh-client docker.io
+          docker --version
+
+      - name: Setup SSH for AUR
+        if: steps.aur_secret.outputs.present == 'true'
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.AUR_SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan aur.archlinux.org >> ~/.ssh/known_hosts
+
+      - name: Clone AUR repo
+        if: steps.aur_secret.outputs.present == 'true'
+        run: git clone ssh://aur@aur.archlinux.org/prevu.git aur
+
+      - name: Update PKGBUILD and .SRCINFO
+        if: steps.aur_secret.outputs.present == 'true'
+        env:
+          VERSION: ${{ steps.normalize.outputs.version }}
+        run: |
+          set -euo pipefail
+          cd aur
+          sed -i "s/^pkgver=.*/pkgver=${VERSION}/" PKGBUILD
+          sed -i "s/^pkgrel=.*/pkgrel=1/" PKGBUILD
+          docker run --rm -v "$PWD:/work" archlinux:latest bash -lc "
+            set -euo pipefail
+            pacman -Sy --noconfirm base-devel pacman-contrib >/dev/null
+            cd /work
+            updpkgsums
+            makepkg --printsrcinfo > .SRCINFO
+          "
+          echo "--- resulting PKGBUILD version lines ---"
+          grep -E '^(pkgver|pkgrel|sha256)' PKGBUILD
+
+      - name: Commit and push update
+        if: steps.aur_secret.outputs.present == 'true'
+        env:
+          VERSION: ${{ steps.normalize.outputs.version }}
+        run: |
+          set -euo pipefail
+          cd aur
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add PKGBUILD .SRCINFO
+          if git diff --cached --quiet; then
+            echo "Nothing to update: AUR is already at ${VERSION}."
+            exit 0
+          fi
+          git commit -m "update to ${VERSION}"
+          git push
+          echo "AUR package updated to ${VERSION}"
