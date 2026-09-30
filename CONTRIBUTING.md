@@ -4,18 +4,17 @@ Thanks for contributing.
 
 ## Development setup
 
-1. Install Node.js and Rust.
+1. Install [Bun](https://bun.sh) and Rust.
 2. Install dependencies:
 
 ```bash
-npm install
-npm --prefix frontend install
+bun install
 ```
 
 3. Start the desktop app:
 
 ```bash
-npm run tauri:dev
+bun run tauri:dev
 ```
 
 ## Contribution guidelines

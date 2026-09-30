@@ -10,7 +10,7 @@ function List({ items, empty, tone }: { items: string[]; empty: string; tone: "o
       : "border-amber-200 bg-amber-50/80 text-amber-900";
 
   return (
-    <section className={`rounded-xl border p-4 ${styles}`}>
+    <section className={`border p-4 ${styles}`}>
       {items.length === 0 ? <p className="text-xs">{empty}</p> : null}
       <ul className="space-y-2 text-xs leading-5">
         {items.map((item) => (

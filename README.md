@@ -223,19 +223,18 @@ prevu/
 
 ## 🧑‍💻 Development
 
-**Prerequisites:** Node.js 20+, Rust stable, platform Tauri deps (WebView2 on Windows, WebKitGTK on Linux)
+**Prerequisites:** [Bun](https://bun.sh) 1.3+, Rust stable, platform Tauri deps (WebView2 on Windows, WebKitGTK on Linux)
 
 ```bash
-# Install dependencies
-npm install
-npm --prefix frontend install
+# Install dependencies (workspace: root + frontend)
+bun install
 
 # Run
-npm run tauri:dev     # Full desktop app with hot reload
-npm run dev           # Frontend only (browser)
+bun run tauri:dev     # Full desktop app with hot reload
+bun run dev           # Frontend only (browser)
 
 # Build
-npm run tauri:build
+bun run tauri:build
 ```
 
 **Adding a new platform preview:**

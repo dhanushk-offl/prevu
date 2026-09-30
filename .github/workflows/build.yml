@@ -3,6 +3,7 @@ name: Build Desktop Installers
 on:
   push:
     branches:
+      - master
       - main
   workflow_dispatch:
 
@@ -32,7 +33,7 @@ jobs:
               target/release/bundle/**/*.dmg
               target/release/bundle/macos/**/*.app
               target/release/bundle/macos/**/*.app/**
-          - os: ubuntu-latest
+          - os: ubuntu-22.04
             bundles: "appimage,deb"
             artifact_name: prevu-linux-bundles
             artifact_paths: |
@@ -43,17 +44,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js 20
-        uses: actions/setup-node@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: "20"
-          cache: "npm"
-          cache-dependency-path: |
-            package-lock.json
-            frontend/package-lock.json
+          bun-version: "1.3.14"
 
       - name: Install Linux system dependencies (Tauri)
-        if: matrix.os == 'ubuntu-latest'
+        if: startsWith(matrix.os, 'ubuntu-')
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -93,40 +90,51 @@ jobs:
             src-tauri -> target
             . -> target
 
-      - name: Install root npm dependencies
-        run: npm ci
-
-      - name: Install frontend npm dependencies
-        run: npm --prefix frontend ci
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
 
       - name: Normalize Tauri config (remove legacy app.env)
         run: |
-          node -e "const fs=require('fs'); const path='src-tauri/tauri.conf.json'; const config=JSON.parse(fs.readFileSync(path,'utf8')); if (config.app && Object.prototype.hasOwnProperty.call(config.app,'env')) { delete config.app.env; fs.writeFileSync(path, JSON.stringify(config, null, 2) + '\n'); console.log('Removed unsupported app.env from tauri.conf.json'); } else { console.log('tauri.conf.json already compatible'); }"
+          bun -e "const fs=require('fs'); const path='src-tauri/tauri.conf.json'; const config=JSON.parse(fs.readFileSync(path,'utf8')); if (config.app && Object.prototype.hasOwnProperty.call(config.app,'env')) { delete config.app.env; fs.writeFileSync(path, JSON.stringify(config, null, 2) + '\n'); console.log('Removed unsupported app.env from tauri.conf.json'); } else { console.log('tauri.conf.json already compatible'); }"
 
-      # ---------------------------------------------------------------
-      # FIX 1: Generate all required Tauri icon sizes from logo.png.
-      # This produces: 32x32.png, 128x128.png, 128x128@2x.png,
-      # icon.ico (Windows), icon.icns (macOS), and Square*Logo.png files
-      # that the AppImage / NSIS / DMG bundlers all require.
-      # ---------------------------------------------------------------
       - name: Generate Tauri icons from logo.png
-        run: npm run tauri -- icon logo.png
+        run: bun run tauri -- icon logo.png
 
       - name: Verify icon files
-        shell: pwsh
+        shell: bash
         run: |
-          Get-ChildItem src-tauri/icons | Format-Table -AutoSize
-          if (!(Test-Path "src-tauri/icons/icon.ico"))   { throw "Missing src-tauri/icons/icon.ico" }
-          if (!(Test-Path "src-tauri/icons/icon.icns"))  { throw "Missing src-tauri/icons/icon.icns" }
-          if (!(Test-Path "src-tauri/icons/128x128.png")) { throw "Missing src-tauri/icons/128x128.png" }
-          if (!(Test-Path "src-tauri/icons/32x32.png"))   { throw "Missing src-tauri/icons/32x32.png" }
+          ls -la src-tauri/icons
+          test -f src-tauri/icons/icon.ico
+          test -f src-tauri/icons/icon.icns
+          test -f src-tauri/icons/128x128.png
+          test -f src-tauri/icons/32x32.png
 
-      # Uses local script alias: "tauri": "tauri"
       - name: Build Tauri app
-        run: npm run tauri -- build --bundles ${{ matrix.bundles }}
+        run: bun run tauri -- build --bundles ${{ matrix.bundles }}
+
+      - name: Verify AppImage .DirIcon
+        if: startsWith(matrix.os, 'ubuntu-')
+        run: |
+          set -euo pipefail
+          APPIMAGE="$(find target/release/bundle/appimage -maxdepth 1 -name '*.AppImage' -print -quit)"
+          test -n "$APPIMAGE"
+          chmod +x "$APPIMAGE"
+          EXTRACT_DIR="$(mktemp -d)"
+          cd "$EXTRACT_DIR"
+          "$APPIMAGE" --appimage-extract
+          if [ ! -e squashfs-root/.DirIcon ]; then
+            echo "FATAL: .DirIcon is missing or broken (absolute symlink?)"
+            ls -la squashfs-root/
+            exit 1
+          fi
+          TARGET="$(readlink -f squashfs-root/.DirIcon || true)"
+          echo ".DirIcon -> $(readlink squashfs-root/.DirIcon || echo '(file)')"
+          test -f "$TARGET"
+          file "$TARGET" | grep -qi 'PNG\|JPEG\|SVG' || file "$TARGET"
+          echo "AppImage .DirIcon OK"
 
       - name: Linux runtime smoke test (detect EGL startup crash)
-        if: matrix.os == 'ubuntu-latest'
+        if: startsWith(matrix.os, 'ubuntu-')
         run: |
           set -euo pipefail
           BIN_PATH="target/release/prevu-desktop"
@@ -145,13 +153,13 @@ jobs:
 
       - name: Show bundle outputs
         if: always()
-        shell: pwsh
+        shell: bash
         run: |
-          if (Test-Path "target/release/bundle") {
-            Get-ChildItem -Recurse -File target/release/bundle | Select-Object -ExpandProperty FullName
-          } else {
-            Write-Host "No bundle directory found"
-          }
+          if [ -d target/release/bundle ]; then
+            find target/release/bundle -type f | sort
+          else
+            echo "No bundle directory found"
+          fi
 
       - name: Upload installers
         uses: actions/upload-artifact@v4

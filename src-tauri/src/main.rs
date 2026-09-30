@@ -8,6 +8,7 @@ use prevu_core::{
 };
 use rfd::FileDialog;
 use std::fs;
+use tauri::{LogicalSize, Manager};
 
 #[cfg(target_os = "linux")]
 fn set_env_if_unset(key: &str, value: &str) {
@@ -121,10 +122,41 @@ fn open_external_url(url: String) -> Result<(), String> {
     Ok(())
 }
 
+fn apply_min_window_size(window: &tauri::WebviewWindow) {
+    // Prevent shrinking past ~50% of the current/primary monitor.
+    // Fallback floors keep the shell usable on unusual displays.
+    let monitor = window
+        .current_monitor()
+        .ok()
+        .flatten()
+        .or_else(|| window.primary_monitor().ok().flatten());
+
+    let (min_w, min_h) = if let Some(monitor) = monitor {
+        let size = monitor.size();
+        let scale = monitor.scale_factor().max(1.0);
+        let width = size.width as f64 / scale;
+        let height = size.height as f64 / scale;
+        (
+            (width * 0.5).round().clamp(760.0, 1400.0),
+            (height * 0.5).round().clamp(520.0, 900.0),
+        )
+    } else {
+        (800.0, 560.0)
+    };
+
+    let _ = window.set_min_size(Some(LogicalSize::new(min_w, min_h)));
+}
+
 fn main() {
     configure_linux_graphics_fallbacks();
 
     tauri::Builder::default()
+        .setup(|app| {
+            if let Some(window) = app.get_webview_window("main") {
+                apply_min_window_size(&window);
+            }
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             inspect_url,
             batch_inspect_urls,

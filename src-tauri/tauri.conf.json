@@ -1,21 +1,27 @@
 {
   "productName": "PREVU",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "identifier": "dev.prevu.desktop",
   "build": {
-    "beforeDevCommand": "npm --prefix frontend run dev",
-    "beforeBuildCommand": "npm --prefix frontend run build",
+    "beforeDevCommand": "bun run --cwd frontend dev",
+    "beforeBuildCommand": "bun run --cwd frontend build",
     "devUrl": "http://localhost:5173",
     "frontendDist": "../frontend/dist"
   },
+
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "PREVU",
         "width": 1200,
         "height": 860,
+        "minWidth": 760,
+        "minHeight": 520,
         "resizable": true,
-        "center": true
+        "center": true,
+        "decorations": false,
+        "transparent": false
       }
     ],
     "security": {

@@ -36,9 +36,9 @@ export default function BatchInspector({ value, loading, rows, onChange, onInspe
       />
 
       {rows.length > 0 ? (
-        <div className="overflow-auto rounded-xl border border-slate-200">
+        <div className="overflow-auto border border-[var(--line)]">
           <table className="min-w-full text-left text-xs">
-            <thead className="bg-slate-50 text-slate-600">
+            <thead className="border-b border-[var(--line)] bg-[var(--surface-soft)] text-slate-600">
               <tr>
                 <th className="px-3 py-2">URL</th>
                 <th className="px-3 py-2">OG Image</th>
@@ -48,7 +48,7 @@ export default function BatchInspector({ value, loading, rows, onChange, onInspe
             </thead>
             <tbody>
               {rows.map((row, idx) => (
-                <tr key={row.url + idx} className="border-t border-slate-100 align-top">
+                <tr key={row.url + idx} className="border-t border-[var(--line)] align-top">
                   <td className="max-w-[300px] px-3 py-2 text-slate-700">
                     <p className="truncate font-medium" title={row.url}>{row.url}</p>
                     {row.title ? <p className="mt-1 text-[11px] text-slate-500">{row.title}</p> : null}
@@ -58,7 +58,7 @@ export default function BatchInspector({ value, loading, rows, onChange, onInspe
                   <td className="px-3 py-2">{row.status}</td>
                   <td className="px-3 py-2">
                     {row.imageUrl ? (
-                      <img src={row.imageUrl} alt="OG" className="h-12 w-20 rounded-lg border border-slate-200 object-cover" />
+                      <img src={row.imageUrl} alt="OG" className="h-12 w-20 border border-[var(--line)] object-contain" />
                     ) : (
                       <span className="text-slate-400">-</span>
                     )}
