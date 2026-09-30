@@ -38,6 +38,7 @@ jobs:
           fi
 
       - name: Normalize and validate version
+        id: normalize
         if: steps.aur_secret.outputs.present == 'true'
         env:
           RAW_VERSION: ${{ inputs.version }}
