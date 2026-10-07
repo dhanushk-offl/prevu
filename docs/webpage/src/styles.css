@@ -173,7 +173,7 @@ main {
 }
 
 .heroCopy {
-  width: min(640px, 100%);
+  width: min(700px, 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -220,7 +220,7 @@ h1 {
   color: var(--muted);
   line-height: 1.6;
   font-size: clamp(0.95rem, 2.4vw, 1.05rem);
-  max-width: 42ch;
+  max-width: 50ch;
   text-wrap: pretty;
 }
 
@@ -306,7 +306,7 @@ h1 {
 }
 
 .section {
-  margin-top: 56px;
+  margin-top: 52px;
   padding-top: 8px;
   border-top: 1px solid var(--line);
 }
@@ -319,8 +319,8 @@ h1 {
 .shotGrid {
   margin-top: 20px;
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .shotThumb {
@@ -343,23 +343,36 @@ h1 {
   background: #eceff3;
 }
 
-.shotThumb span {
+.shotMeta {
   display: block;
-  padding: 8px 9px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--muted);
+  padding: 9px 10px;
   border-top: 1px solid var(--line);
+}
+
+.shotMeta strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--muted);
+}
+
+.shotMeta small {
+  display: block;
+  margin-top: 2px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
 }
 
 .shotThumb:hover,
 .shotThumb:focus-visible {
   border-color: var(--ink);
-  outline: none;
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
 }
 
-.shotThumb:hover span,
-.shotThumb:focus-visible span {
+.shotThumb:hover .shotMeta strong,
+.shotThumb:focus-visible .shotMeta strong {
   color: var(--ink);
 }
 
@@ -834,7 +847,7 @@ button.assetBtn:disabled {
   }
 
   .shotGrid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .lightboxStage {
@@ -882,7 +895,7 @@ button.assetBtn:disabled {
   }
 
   .shotGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
   }
 
   .lightbox {

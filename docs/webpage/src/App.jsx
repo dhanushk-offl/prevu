@@ -55,12 +55,13 @@ function normalizePath(value) {
 const FOCUSABLE_SELECTOR =
   'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-function ScreenshotLightbox({ index, onClose, onPrev, onNext }) {
+function ScreenshotLightbox({ index, onClose, onPrev, onNext, dimensionsById }) {
   const closeRef = useRef(null);
   const dialogRef = useRef(null);
   const shot = screenshots[index];
   const hasPrev = index > 0;
   const hasNext = index < screenshots.length - 1;
+  const dimensions = shot ? dimensionsById?.[shot.id] : null;
 
   useEffect(() => {
     const previous = document.activeElement;
@@ -182,6 +183,7 @@ function ScreenshotLightbox({ index, onClose, onPrev, onNext }) {
 
         <p className="lightboxMeta">
           {index + 1} / {screenshots.length}
+          {dimensions ? <span>{dimensions}</span> : null}
           <span>Use ← → or the arrows · Esc to close</span>
         </p>
       </div>
@@ -236,6 +238,17 @@ function Nav({ starLabel, version, path, navigate }) {
 function HomePage({ releaseTag, releaseLoading, findByExt, version, navigate }) {
   const displayVersion = releaseTag || `v${version}`;
   const [lightboxIndex, setLightboxIndex] = useState(null);
+  const [shotDimensions, setShotDimensions] = useState({});
+
+  const registerShotDimensions = (id, event) => {
+    const { naturalWidth, naturalHeight } = event.currentTarget;
+    if (!naturalWidth || !naturalHeight) return;
+    const label = `${naturalWidth} × ${naturalHeight}`;
+    setShotDimensions((current) => {
+      if (current[id] === label) return current;
+      return { ...current, [id]: label };
+    });
+  };
 
   const openShot = (shotId) => {
     const index = screenshots.findIndex((shot) => shot.id === shotId);
@@ -274,7 +287,9 @@ function HomePage({ releaseTag, releaseLoading, findByExt, version, navigate }) 
       <section id="screenshots" className="section">
         <div className="sectionHead">
           <h2>Product screenshots</h2>
-          <p className="sectionText">Tap any image to open a larger view. Same captures as the project README.</p>
+          <p className="sectionText">
+            Tap any image to open a larger view. Dimensions are shown per screenshot for quick clarity.
+          </p>
         </div>
         <div className="shotGrid">
           {screenshots.map((shot) => (
@@ -285,8 +300,16 @@ function HomePage({ releaseTag, releaseLoading, findByExt, version, navigate }) 
               onClick={() => openShot(shot.id)}
               aria-label={`View ${shot.title} larger`}
             >
-              <img src={shot.src} alt="" loading="lazy" />
-              <span>{shot.title}</span>
+              <img
+                src={shot.src}
+                alt=""
+                loading="lazy"
+                onLoad={(event) => registerShotDimensions(shot.id, event)}
+              />
+              <span className="shotMeta">
+                <strong>{shot.title}</strong>
+                <small>{shotDimensions[shot.id] || "Loading size..."}</small>
+              </span>
             </button>
           ))}
         </div>
@@ -298,6 +321,7 @@ function HomePage({ releaseTag, releaseLoading, findByExt, version, navigate }) 
           onClose={closeLightbox}
           onPrev={showPrev}
           onNext={showNext}
+          dimensionsById={shotDimensions}
         />
       ) : null}
 
