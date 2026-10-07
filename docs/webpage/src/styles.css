@@ -210,7 +210,7 @@ h1 {
   margin: 0;
   font-size: clamp(1.85rem, 5.2vw, 3.1rem);
   line-height: 1.08;
-  max-width: 15ch;
+  max-width: 19ch;
 }
 
 .subhead,
@@ -339,8 +339,8 @@ h1 {
 .shotThumb img {
   display: block;
   width: 100%;
-  height: auto;
-  aspect-ratio: var(--shot-ratio, 16 / 9);
+  height: 100%;
+  aspect-ratio: 16 / 9;
   object-fit: cover;
   object-position: center top;
   border-bottom: 1px solid var(--line);
@@ -357,14 +357,6 @@ h1 {
   display: block;
   font-size: 12px;
   font-weight: 650;
-  color: var(--muted);
-}
-
-.shotMeta small {
-  display: block;
-  margin-top: 2px;
-  font-family: var(--mono);
-  font-size: 11px;
   color: var(--muted);
 }
 

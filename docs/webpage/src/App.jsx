@@ -55,13 +55,12 @@ function normalizePath(value) {
 const FOCUSABLE_SELECTOR =
   'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-function ScreenshotLightbox({ index, onClose, onPrev, onNext, shotMetaById }) {
+function ScreenshotLightbox({ index, onClose, onPrev, onNext }) {
   const closeRef = useRef(null);
   const dialogRef = useRef(null);
   const shot = screenshots[index];
   const hasPrev = index > 0;
   const hasNext = index < screenshots.length - 1;
-  const dimensions = shot ? shotMetaById?.[shot.id]?.label : null;
 
   useEffect(() => {
     const previous = document.activeElement;
@@ -183,7 +182,6 @@ function ScreenshotLightbox({ index, onClose, onPrev, onNext, shotMetaById }) {
 
         <p className="lightboxMeta">
           {index + 1} / {screenshots.length}
-          {dimensions ? <span>{dimensions}</span> : null}
           <span>Use ← → or the arrows · Esc to close</span>
         </p>
       </div>
@@ -238,21 +236,6 @@ function Nav({ starLabel, version, path, navigate }) {
 function HomePage({ releaseTag, releaseLoading, findByExt, version, navigate }) {
   const displayVersion = releaseTag || `v${version}`;
   const [lightboxIndex, setLightboxIndex] = useState(null);
-  const [shotMetaById, setShotMetaById] = useState({});
-
-  const registerShotDimensions = (id, event) => {
-    const { naturalWidth, naturalHeight } = event.currentTarget;
-    if (!naturalWidth || !naturalHeight) return;
-    const nextMeta = {
-      label: `${naturalWidth} × ${naturalHeight}`,
-      ratio: `${naturalWidth} / ${naturalHeight}`,
-    };
-    setShotMetaById((current) => {
-      const existing = current[id];
-      if (existing?.label === nextMeta.label && existing?.ratio === nextMeta.ratio) return current;
-      return { ...current, [id]: nextMeta };
-    });
-  };
 
   const openShot = (shotId) => {
     const index = screenshots.findIndex((shot) => shot.id === shotId);
@@ -271,7 +254,11 @@ function HomePage({ releaseTag, releaseLoading, findByExt, version, navigate }) 
       <section className="hero">
         <div className="heroCopy fadeUp">
           <p className="brandMark">PREVU</p>
-          <h1>Catch broken social previews before you ship.</h1>
+          <h1>
+            Catch broken social previews
+            <br />
+            before you ship.
+          </h1>
           <p className="subhead">
             Inspect Open Graph and Twitter Card metadata on localhost, staging, or production — with validation,
             platform previews, and a shared Rust CLI.
@@ -291,13 +278,10 @@ function HomePage({ releaseTag, releaseLoading, findByExt, version, navigate }) 
       <section id="screenshots" className="section">
         <div className="sectionHead">
           <h2>Product screenshots</h2>
-          <p className="sectionText">
-            Tap any image to open a larger view. Dimensions are shown per screenshot for quick clarity.
-          </p>
+          <p className="sectionText">Tap any image to open a larger view.</p>
         </div>
         <div className="shotGrid">
           {screenshots.map((shot) => {
-            const shotMeta = shotMetaById[shot.id];
             return (
               <button
                 key={shot.id}
@@ -305,17 +289,10 @@ function HomePage({ releaseTag, releaseLoading, findByExt, version, navigate }) 
                 className="shotThumb"
                 onClick={() => openShot(shot.id)}
                 aria-label={`View ${shot.title} larger`}
-                style={{ "--shot-ratio": shotMeta?.ratio || "16 / 9" }}
               >
-                <img
-                  src={shot.src}
-                  alt=""
-                  loading="lazy"
-                  onLoad={(event) => registerShotDimensions(shot.id, event)}
-                />
+                <img src={shot.src} alt="" loading="lazy" />
                 <span className="shotMeta">
                   <strong>{shot.title}</strong>
-                  <small>{shotMeta?.label || "Loading size..."}</small>
                 </span>
               </button>
             );
@@ -329,7 +306,6 @@ function HomePage({ releaseTag, releaseLoading, findByExt, version, navigate }) 
           onClose={closeLightbox}
           onPrev={showPrev}
           onNext={showNext}
-          shotMetaById={shotMetaById}
         />
       ) : null}
 
