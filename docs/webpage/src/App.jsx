@@ -55,13 +55,13 @@ function normalizePath(value) {
 const FOCUSABLE_SELECTOR =
   'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-function ScreenshotLightbox({ index, onClose, onPrev, onNext, dimensionsById }) {
+function ScreenshotLightbox({ index, onClose, onPrev, onNext, shotMetaById }) {
   const closeRef = useRef(null);
   const dialogRef = useRef(null);
   const shot = screenshots[index];
   const hasPrev = index > 0;
   const hasNext = index < screenshots.length - 1;
-  const dimensions = shot ? dimensionsById?.[shot.id] : null;
+  const dimensions = shot ? shotMetaById?.[shot.id]?.label : null;
 
   useEffect(() => {
     const previous = document.activeElement;
@@ -238,15 +238,19 @@ function Nav({ starLabel, version, path, navigate }) {
 function HomePage({ releaseTag, releaseLoading, findByExt, version, navigate }) {
   const displayVersion = releaseTag || `v${version}`;
   const [lightboxIndex, setLightboxIndex] = useState(null);
-  const [shotDimensions, setShotDimensions] = useState({});
+  const [shotMetaById, setShotMetaById] = useState({});
 
   const registerShotDimensions = (id, event) => {
     const { naturalWidth, naturalHeight } = event.currentTarget;
     if (!naturalWidth || !naturalHeight) return;
-    const label = `${naturalWidth} × ${naturalHeight}`;
-    setShotDimensions((current) => {
-      if (current[id] === label) return current;
-      return { ...current, [id]: label };
+    const nextMeta = {
+      label: `${naturalWidth} × ${naturalHeight}`,
+      ratio: `${naturalWidth} / ${naturalHeight}`,
+    };
+    setShotMetaById((current) => {
+      const existing = current[id];
+      if (existing?.label === nextMeta.label && existing?.ratio === nextMeta.ratio) return current;
+      return { ...current, [id]: nextMeta };
     });
   };
 
@@ -292,26 +296,30 @@ function HomePage({ releaseTag, releaseLoading, findByExt, version, navigate }) 
           </p>
         </div>
         <div className="shotGrid">
-          {screenshots.map((shot) => (
-            <button
-              key={shot.id}
-              type="button"
-              className="shotThumb"
-              onClick={() => openShot(shot.id)}
-              aria-label={`View ${shot.title} larger`}
-            >
-              <img
-                src={shot.src}
-                alt=""
-                loading="lazy"
-                onLoad={(event) => registerShotDimensions(shot.id, event)}
-              />
-              <span className="shotMeta">
-                <strong>{shot.title}</strong>
-                <small>{shotDimensions[shot.id] || "Loading size..."}</small>
-              </span>
-            </button>
-          ))}
+          {screenshots.map((shot) => {
+            const shotMeta = shotMetaById[shot.id];
+            return (
+              <button
+                key={shot.id}
+                type="button"
+                className="shotThumb"
+                onClick={() => openShot(shot.id)}
+                aria-label={`View ${shot.title} larger`}
+                style={{ "--shot-ratio": shotMeta?.ratio || "16 / 9" }}
+              >
+                <img
+                  src={shot.src}
+                  alt=""
+                  loading="lazy"
+                  onLoad={(event) => registerShotDimensions(shot.id, event)}
+                />
+                <span className="shotMeta">
+                  <strong>{shot.title}</strong>
+                  <small>{shotMeta?.label || "Loading size..."}</small>
+                </span>
+              </button>
+            );
+          })}
         </div>
       </section>
 
@@ -321,7 +329,7 @@ function HomePage({ releaseTag, releaseLoading, findByExt, version, navigate }) 
           onClose={closeLightbox}
           onPrev={showPrev}
           onNext={showNext}
-          dimensionsById={shotDimensions}
+          shotMetaById={shotMetaById}
         />
       ) : null}
 
