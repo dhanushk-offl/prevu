@@ -254,7 +254,11 @@ function HomePage({ releaseTag, releaseLoading, findByExt, version, navigate }) 
       <section className="hero">
         <div className="heroCopy fadeUp">
           <p className="brandMark">PREVU</p>
-          <h1>Catch broken social previews before you ship.</h1>
+          <h1>
+            Catch broken social previews
+            <br />
+            before you ship.
+          </h1>
           <p className="subhead">
             Inspect Open Graph and Twitter Card metadata on localhost, staging, or production — with validation,
             platform previews, and a shared Rust CLI.
@@ -274,21 +278,25 @@ function HomePage({ releaseTag, releaseLoading, findByExt, version, navigate }) 
       <section id="screenshots" className="section">
         <div className="sectionHead">
           <h2>Product screenshots</h2>
-          <p className="sectionText">Tap any image to open a larger view. Same captures as the project README.</p>
+          <p className="sectionText">Tap any image to open a larger view.</p>
         </div>
         <div className="shotGrid">
-          {screenshots.map((shot) => (
-            <button
-              key={shot.id}
-              type="button"
-              className="shotThumb"
-              onClick={() => openShot(shot.id)}
-              aria-label={`View ${shot.title} larger`}
-            >
-              <img src={shot.src} alt="" loading="lazy" />
-              <span>{shot.title}</span>
-            </button>
-          ))}
+          {screenshots.map((shot) => {
+            return (
+              <button
+                key={shot.id}
+                type="button"
+                className="shotThumb"
+                onClick={() => openShot(shot.id)}
+                aria-label={`View ${shot.title} larger`}
+              >
+                <img src={shot.src} alt="" loading="lazy" />
+                <span className="shotMeta">
+                  <strong>{shot.title}</strong>
+                </span>
+              </button>
+            );
+          })}
         </div>
       </section>
 

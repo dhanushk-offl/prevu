@@ -173,7 +173,7 @@ main {
 }
 
 .heroCopy {
-  width: min(640px, 100%);
+  width: min(700px, 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -210,7 +210,7 @@ h1 {
   margin: 0;
   font-size: clamp(1.85rem, 5.2vw, 3.1rem);
   line-height: 1.08;
-  max-width: 15ch;
+  max-width: 19ch;
 }
 
 .subhead,
@@ -220,7 +220,7 @@ h1 {
   color: var(--muted);
   line-height: 1.6;
   font-size: clamp(0.95rem, 2.4vw, 1.05rem);
-  max-width: 42ch;
+  max-width: 50ch;
   text-wrap: pretty;
 }
 
@@ -306,7 +306,7 @@ h1 {
 }
 
 .section {
-  margin-top: 56px;
+  margin-top: 52px;
   padding-top: 8px;
   border-top: 1px solid var(--line);
 }
@@ -319,8 +319,8 @@ h1 {
 .shotGrid {
   margin-top: 20px;
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .shotThumb {
@@ -331,35 +331,46 @@ h1 {
   text-align: left;
   cursor: zoom-in;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
 }
 
 .shotThumb img {
   display: block;
   width: 100%;
   height: 100%;
-  aspect-ratio: 16 / 10;
-  object-fit: contain;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
   object-position: center top;
-  background: #eceff3;
+  border-bottom: 1px solid var(--line);
+  background: #f2f4f8;
 }
 
-.shotThumb span {
+.shotMeta {
   display: block;
-  padding: 8px 9px;
+  padding: 9px 11px 10px;
+  background: linear-gradient(180deg, #fcfdff 0%, #f7f9fc 100%);
+}
+
+.shotMeta strong {
+  display: block;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 650;
   color: var(--muted);
-  border-top: 1px solid var(--line);
 }
 
 .shotThumb:hover,
 .shotThumb:focus-visible {
   border-color: var(--ink);
-  outline: none;
+  box-shadow: 0 10px 22px rgba(18, 20, 26, 0.09);
+  transform: translateY(-1px);
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
 }
 
-.shotThumb:hover span,
-.shotThumb:focus-visible span {
+.shotThumb:hover .shotMeta strong,
+.shotThumb:focus-visible .shotMeta strong {
   color: var(--ink);
 }
 
@@ -834,7 +845,7 @@ button.assetBtn:disabled {
   }
 
   .shotGrid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .lightboxStage {
@@ -882,7 +893,7 @@ button.assetBtn:disabled {
   }
 
   .shotGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
   }
 
   .lightbox {
